@@ -1,0 +1,12 @@
+node_modules
+.DS_Store
+dist
+.env
+.env.local
+coverage
+apps/backend/dev.db
+apps/backend/dev.db-shm
+apps/backend/dev.db-wal
+apps/frontend/.vite
+.env.production
+

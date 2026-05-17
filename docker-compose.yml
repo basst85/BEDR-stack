@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: /app/data/dev.db
+    ports:
+      - '3000:3000'
+    volumes:
+      - bedr-data:/app/data
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000
+    ports:
+      - '4173:4173'
+    depends_on:
+      - backend
+
+volumes:
+  bedr-data:

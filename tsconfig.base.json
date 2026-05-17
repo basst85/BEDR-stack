@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "types": ["bun-types"],
+    "paths": {
+      "@/*": ["./apps/frontend/src/*"],
+      "@backend/*": ["./apps/backend/src/*"],
+      "@backend-tests/*": ["./apps/backend/test/*"],
+      "@bedr/shared-client": ["./packages/shared-client/index.ts"]
+    }
+  }
+}
