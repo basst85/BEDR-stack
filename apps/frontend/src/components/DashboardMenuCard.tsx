@@ -38,26 +38,26 @@ export function DashboardMenuCard() {
       title="Actions"
       description="Refresh your data, return home, or end the current session."
       icon={
-        <div className="rounded-full border border-primary/40 bg-primary/10 p-2 text-primary">
+        <div className="border-primary/40 bg-primary/10 text-primary rounded-full border p-2">
           <ShieldCheck className="h-4 w-4" />
         </div>
       }
       actions={
-        <div className="rounded-full border border-border/70 bg-muted/40 px-3 py-1.5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="border-border/70 bg-muted/40 text-muted-foreground rounded-full border px-3 py-1.5 text-xs tracking-[0.2em] uppercase">
           Signed in
         </div>
       }
       contentClassName="grid gap-5"
     >
       <div className="grid gap-4">
-        <div className="rounded-2xl border border-border/60 bg-muted/40 p-4">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="border-border/60 bg-muted/40 rounded-2xl border p-4">
+          <p className="text-muted-foreground text-[11px] tracking-[0.2em] uppercase">
             Current session
           </p>
-          <p className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+          <p className="text-foreground mt-2 text-xl font-semibold tracking-tight">
             {session?.user.name ?? 'Authenticated user'}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             {session?.user.email ?? 'Session details are shown here.'}
           </p>
         </div>

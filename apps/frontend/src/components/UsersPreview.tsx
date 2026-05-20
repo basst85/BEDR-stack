@@ -41,11 +41,11 @@ export function UsersPreview() {
         {(usersQuery.data ?? []).map((user) => (
           <li
             key={user.id}
-            className="grid gap-1 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-sm"
+            className="border-border/60 bg-muted/40 grid gap-1 rounded-2xl border px-4 py-3 text-sm"
           >
-            <strong className="text-base text-foreground">{user.name}</strong>
+            <strong className="text-foreground text-base">{user.name}</strong>
             <span className="text-muted-foreground">{user.email}</span>
-            <time className="text-xs text-muted-foreground/80" dateTime={user.createdAt}>
+            <time className="text-muted-foreground/80 text-xs" dateTime={user.createdAt}>
               {new Date(user.createdAt).toLocaleString()}
             </time>
           </li>

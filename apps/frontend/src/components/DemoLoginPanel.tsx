@@ -115,7 +115,7 @@ export function DemoLoginPanel() {
       className="xl:col-span-2"
       contentClassName="space-y-4"
       icon={
-        <div className="rounded-full border border-primary/40 bg-primary/10 p-2 text-primary">
+        <div className="border-primary/40 bg-primary/10 text-primary rounded-full border p-2">
           <ShieldCheck className="h-4 w-4" />
         </div>
       }
@@ -173,7 +173,7 @@ export function DemoLoginPanel() {
       <p
         data-kind={state.kind}
         className={cn(
-          'text-sm text-muted-foreground',
+          'text-muted-foreground text-sm',
           state.kind === 'success' && 'text-emerald-400',
           state.kind === 'error' && 'text-destructive',
         )}
@@ -182,20 +182,20 @@ export function DemoLoginPanel() {
       </p>
 
       {session ? (
-        <dl className="grid gap-4 rounded-2xl border border-border/70 bg-muted/40 p-4 sm:grid-cols-3">
+        <dl className="border-border/70 bg-muted/40 grid gap-4 rounded-2xl border p-4 sm:grid-cols-3">
           <div className="grid gap-1">
-            <dt className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Name</dt>
-            <dd className="text-sm text-foreground">{session.user.name}</dd>
+            <dt className="text-muted-foreground text-[11px] tracking-[0.2em] uppercase">Name</dt>
+            <dd className="text-foreground text-sm">{session.user.name}</dd>
           </div>
           <div className="grid gap-1">
-            <dt className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Email</dt>
-            <dd className="text-sm text-foreground">{session.user.email}</dd>
+            <dt className="text-muted-foreground text-[11px] tracking-[0.2em] uppercase">Email</dt>
+            <dd className="text-foreground text-sm">{session.user.email}</dd>
           </div>
           <div className="grid gap-1">
-            <dt className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            <dt className="text-muted-foreground text-[11px] tracking-[0.2em] uppercase">
               User ID
             </dt>
-            <dd className="overflow-wrap-anywhere text-sm text-foreground">{session.user.id}</dd>
+            <dd className="overflow-wrap-anywhere text-foreground text-sm">{session.user.id}</dd>
           </div>
         </dl>
       ) : null}

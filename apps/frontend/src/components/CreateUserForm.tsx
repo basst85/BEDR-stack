@@ -119,7 +119,7 @@ export function CreateUserForm() {
         <p
           data-kind={state.kind}
           className={cn(
-            'text-sm text-muted-foreground',
+            'text-muted-foreground text-sm',
             state.kind === 'success' && 'text-emerald-400',
             state.kind === 'error' && 'text-destructive',
           )}

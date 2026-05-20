@@ -38,7 +38,7 @@ export function SectionTile({
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             {icon ? <div className="shrink-0">{icon}</div> : null}
-            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{eyebrow}</p>
+            <p className="text-muted-foreground text-xs tracking-[0.22em] uppercase">{eyebrow}</p>
           </div>
           <div className="space-y-1">
             <CardTitle className="text-3xl font-semibold tracking-tight">{title}</CardTitle>
