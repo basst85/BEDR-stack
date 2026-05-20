@@ -13,6 +13,10 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { App } from './pages/App';
 import { DashboardPage } from './pages/DashboardPage';
 import { HomePage } from './pages/HomePage';
+import { ShopCartPage } from './pages/ShopCartPage';
+import { ShopLayout } from './pages/ShopLayout';
+import { ShopPage } from './pages/ShopPage';
+import { ShopProductPage } from './pages/ShopProductPage';
 import { queryClient } from '@/lib/query-client';
 import './styles/global.css';
 
@@ -35,6 +39,24 @@ const router = createBrowserRouter([
             element: <DashboardPage />,
           },
         ],
+      },
+    ],
+  },
+  {
+    path: '/shop',
+    element: <ShopLayout />,
+    children: [
+      {
+        index: true,
+        element: <ShopPage />,
+      },
+      {
+        path: 'cart',
+        element: <ShopCartPage />,
+      },
+      {
+        path: ':productId',
+        element: <ShopProductPage />,
       },
     ],
   },
