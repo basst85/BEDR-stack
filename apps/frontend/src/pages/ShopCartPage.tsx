@@ -8,17 +8,16 @@ import {
   shopSecondaryButtonClassName,
 } from '@/components/shop/buttonStyles';
 import { SeoHead } from '@/components/SeoHead';
-import { useCartLines, useShop } from '@/components/shop/shopStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatShopPrice } from '@/lib/shop';
+import { useOptimisticCart } from '../components/shop/useOptimisticCart';
 
 export function ShopCartPage() {
-  const cartLines = useCartLines();
-  const { setQuantity, removeFromCart } = useShop();
+  const { cartLines, setQuantity, removeFromCart } = useOptimisticCart();
 
   const subtotal = cartLines.reduce((total, line) => total + line.lineTotal, 0);
   const shipping = subtotal >= 150 || subtotal === 0 ? 0 : 12;

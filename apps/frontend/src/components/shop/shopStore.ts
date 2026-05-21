@@ -2,9 +2,16 @@ import { create } from 'zustand';
 
 import { getShopProduct } from '@/lib/shop';
 
-type CartLine = {
+export type CartLine = {
   productId: string;
   quantity: number;
+};
+
+export type ShopCartLine = CartLine & {
+  product: ReturnType<typeof getShopProduct> extends infer Product | undefined
+    ? Exclude<Product, undefined>
+    : never;
+  lineTotal: number;
 };
 
 type ShopContextValue = {
@@ -66,7 +73,7 @@ export function useShop() {
 export function useCartLines() {
   const { cart } = useShop();
 
-  return cart.flatMap((line) => {
+  return cart.flatMap<ShopCartLine>((line) => {
     const product = getShopProduct(line.productId);
 
     if (!product) {

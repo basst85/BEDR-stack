@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useActionState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
@@ -12,54 +12,59 @@ import { SectionTile } from './SectionTile';
 type CreateUserState = {
   message: string;
   kind: 'idle' | 'success' | 'error';
+  resetKey: number;
 };
 
 const initialState: CreateUserState = {
   message: 'Create a new account.',
   kind: 'idle',
+  resetKey: 0,
 };
 
 export function CreateUserForm() {
-  const [state, setState] = useState<CreateUserState>(initialState);
   const queryClient = useQueryClient();
 
   const registrationMutation = useMutation({
     mutationFn: registerUser,
-    onSuccess: async (user) => {
-      setState({
-        kind: 'success',
-        message: `Account for ${user.name} was created.`,
-      });
-
-      await queryClient.invalidateQueries({ queryKey: queryKeys.users() });
-    },
-    onError: (error) => {
-      setState({
-        kind: 'error',
-        message: error instanceof Error ? error.message : 'Could not save the user.',
-      });
-    },
   });
 
-  const handleSubmit = async (formData: FormData) => {
+  const submitRegistration = async (_previousState: CreateUserState, formData: FormData) => {
     const email = String(formData.get('email') ?? '').trim();
     const name = String(formData.get('name') ?? '').trim();
     const password = String(formData.get('password') ?? '').trim();
 
     if (!email || !name || !password) {
-      setState({
+      return {
         kind: 'error',
         message: 'Name, email, and password are required.',
-      });
-      return;
+        resetKey: 0,
+      } satisfies CreateUserState;
     }
 
-    await registrationMutation.mutateAsync({
-      email,
-      name,
-      password,
-    });
+    try {
+      const user = await registrationMutation.mutateAsync({
+        email,
+        name,
+        password,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: queryKeys.users() });
+
+      return {
+        kind: 'success',
+        message: `Account for ${user.name} was created.`,
+        resetKey: Date.now(),
+      } satisfies CreateUserState;
+    } catch (error) {
+      return {
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Could not save the user.',
+        resetKey: 0,
+      } satisfies CreateUserState;
+    }
   };
+
+  const [state, formAction, isPending] = useActionState(submitRegistration, initialState);
 
   return (
     <SectionTile
@@ -67,13 +72,7 @@ export function CreateUserForm() {
       title="Create account"
       description="Add a user who can sign in to the workspace."
     >
-      <form
-        className="grid gap-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleSubmit(new FormData(event.currentTarget));
-        }}
-      >
+      <form key={state.resetKey} className="grid gap-4" action={formAction}>
         <div className="grid gap-2">
           <Label htmlFor="create-user-name">Name</Label>
           <Input
@@ -108,12 +107,8 @@ export function CreateUserForm() {
           />
         </div>
 
-        <Button
-          type="submit"
-          disabled={registrationMutation.isPending}
-          className="mt-2 w-full sm:w-fit"
-        >
-          {registrationMutation.isPending ? 'Working...' : 'Create account'}
+        <Button type="submit" disabled={isPending} className="mt-2 w-full sm:w-fit">
+          {isPending ? 'Creating...' : 'Create account'}
         </Button>
 
         <p

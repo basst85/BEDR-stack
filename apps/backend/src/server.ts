@@ -1,14 +1,14 @@
 import { cors } from '@elysiajs/cors';
 import { Elysia } from 'elysia';
 
-import { config } from './core/config';
+import { config, isAllowedCorsOrigin } from './core/config';
 import { authController } from './modules/auth/controller';
 import { usersController } from './modules/users/controller';
 
 export const app = new Elysia()
   .use(
     cors({
-      origin: config.corsOrigins,
+      origin: (request) => isAllowedCorsOrigin(request.headers.get('origin')),
       methods: ['GET', 'POST'],
       credentials: true,
     }),

@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@bedr/shared-client": "workspace:*",
+    "@fontsource/geist-mono": "^5.2.8",
+    "@fontsource/geist-sans": "^5.2.5",
     "@fontsource/montserrat": "^5.2.8",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",

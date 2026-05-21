@@ -1,3 +1,4 @@
+import { startTransition, useOptimistic } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
@@ -16,6 +17,10 @@ import { formatShopPrice, getShopProduct } from '@/lib/shop';
 export function ShopProductPage() {
   const { productId = '' } = useParams();
   const { addToCart, cartCount } = useShop();
+  const [optimisticCartCount, addOptimisticCartCount] = useOptimistic(
+    cartCount,
+    (count, quantity: number) => count + quantity,
+  );
   const product = getShopProduct(productId);
 
   if (!product) {
@@ -86,7 +91,9 @@ export function ShopProductPage() {
                   </Link>
                 </Button>
                 <Button asChild variant="secondary" className={shopSecondaryButtonClassName}>
-                  <Link to="/shop/cart">Cart {cartCount ? `(${cartCount})` : ''}</Link>
+                  <Link to="/shop/cart">
+                    Cart {optimisticCartCount ? `(${optimisticCartCount})` : ''}
+                  </Link>
                 </Button>
               </div>
 
@@ -111,7 +118,13 @@ export function ShopProductPage() {
                 <Button
                   size="lg"
                   className={shopPrimaryButtonClassName}
-                  onClick={() => addToCart(product.id)}
+                  onClick={() => {
+                    addOptimisticCartCount(1);
+
+                    startTransition(() => {
+                      addToCart(product.id);
+                    });
+                  }}
                 >
                   Add to cart
                 </Button>

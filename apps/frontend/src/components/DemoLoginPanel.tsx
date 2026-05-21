@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useActionState, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck } from 'lucide-react';
 
@@ -13,16 +13,18 @@ import { SectionTile } from './SectionTile';
 type SessionState = {
   kind: 'idle' | 'success' | 'error';
   message: string;
+  resetKey: number;
 };
 
 const initialState: SessionState = {
   kind: 'idle',
   message: 'Sign in with your account details.',
+  resetKey: 0,
 };
 
 export function DemoLoginPanel() {
-  const [state, setState] = useState<SessionState>(initialState);
   const queryClient = useQueryClient();
+  const [localState, setLocalState] = useState<SessionState | null>(null);
 
   const sessionQuery = useQuery({
     queryKey: queryKeys.session(),
@@ -33,76 +35,87 @@ export function DemoLoginPanel() {
 
   const loginMutation = useMutation({
     mutationFn: loginUser,
-    onSuccess: (session) => {
-      queryClient.setQueryData(queryKeys.session(), session);
-      setState({
-        kind: 'success',
-        message: `Welcome back, ${session.user.name}.`,
-      });
-    },
-    onError: (error) => {
-      setState({
-        kind: 'error',
-        message: error instanceof Error ? error.message : 'Could not connect to the auth API.',
-      });
-    },
   });
 
   const logoutMutation = useMutation({
     mutationFn: logoutUser,
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: queryKeys.session() });
-      queryClient.removeQueries({ queryKey: queryKeys.users() });
-      setState({
-        kind: 'idle',
-        message: 'Session cleared.',
-      });
-    },
-    onError: () => {
-      setState({
-        kind: 'error',
-        message: 'Could not clear the session.',
-      });
-    },
   });
+
+  const [state, submitLogin, isLoginPending] = useActionState(
+    async (_previousState: SessionState, formData: FormData) => {
+      const email = String(formData.get('email') ?? '').trim();
+      const password = String(formData.get('password') ?? '').trim();
+
+      if (!email || !password) {
+        return {
+          kind: 'error',
+          message: 'Email and password are required.',
+          resetKey: 0,
+        } satisfies SessionState;
+      }
+
+      try {
+        const session = await loginMutation.mutateAsync({ email, password });
+
+        queryClient.setQueryData(queryKeys.session(), session);
+
+        return {
+          kind: 'success',
+          message: `Welcome back, ${session.user.name}.`,
+          resetKey: Date.now(),
+        } satisfies SessionState;
+      } catch (error) {
+        return {
+          kind: 'error',
+          message: error instanceof Error ? error.message : 'Could not connect to the auth API.',
+          resetKey: 0,
+        } satisfies SessionState;
+      }
+    },
+    initialState,
+  );
 
   const updateSession = async () => {
     const result = await sessionQuery.refetch();
 
     if (result.error || !result.data) {
-      setState({
+      setLocalState({
         kind: 'error',
         message: 'No active session found.',
+        resetKey: 0,
       });
       return;
     }
 
-    setState({
+    setLocalState({
       kind: 'success',
       message: `Signed in as ${result.data.user.name}.`,
+      resetKey: state.resetKey,
     });
   };
 
-  const login = async (formData: FormData) => {
-    const email = String(formData.get('email') ?? '').trim();
-    const password = String(formData.get('password') ?? '').trim();
-
-    if (!email || !password) {
-      setState({
-        kind: 'error',
-        message: 'Email and password are required.',
-      });
-      return;
-    }
-
-    await loginMutation.mutateAsync({ email, password });
-  };
-
   const logout = async () => {
-    await logoutMutation.mutateAsync();
+    try {
+      await logoutMutation.mutateAsync();
+      queryClient.removeQueries({ queryKey: queryKeys.session() });
+      queryClient.removeQueries({ queryKey: queryKeys.users() });
+
+      setLocalState({
+        kind: 'idle',
+        message: 'Session cleared.',
+        resetKey: 0,
+      });
+    } catch {
+      setLocalState({
+        kind: 'error',
+        message: 'Could not clear the session.',
+        resetKey: state.resetKey,
+      });
+    }
   };
 
-  const pending = loginMutation.isPending || logoutMutation.isPending || sessionQuery.isFetching;
+  const effectiveState = localState ?? state;
+  const pending = isLoginPending || logoutMutation.isPending || sessionQuery.isFetching;
   const session =
     (queryClient.getQueryData(queryKeys.session()) as SessionResponse | undefined) ??
     sessionQuery.data;
@@ -121,11 +134,10 @@ export function DemoLoginPanel() {
       }
     >
       <form
+        key={effectiveState.resetKey}
         className="grid gap-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void login(new FormData(event.currentTarget));
-        }}
+        action={submitLogin}
+        onSubmit={() => setLocalState(null)}
       >
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
@@ -154,7 +166,7 @@ export function DemoLoginPanel() {
 
         <div className="flex flex-wrap gap-3">
           <Button type="submit" disabled={pending}>
-            {pending ? 'Working...' : 'Sign in'}
+            {isLoginPending ? 'Signing in...' : 'Sign in'}
           </Button>
           <Button
             type="button"
@@ -162,23 +174,23 @@ export function DemoLoginPanel() {
             onClick={() => void updateSession()}
             disabled={pending}
           >
-            Check status
+            {sessionQuery.isFetching ? 'Checking...' : 'Check status'}
           </Button>
           <Button type="button" variant="outline" onClick={() => void logout()} disabled={pending}>
-            Sign out
+            {logoutMutation.isPending ? 'Signing out...' : 'Sign out'}
           </Button>
         </div>
       </form>
 
       <p
-        data-kind={state.kind}
+        data-kind={effectiveState.kind}
         className={cn(
           'text-muted-foreground text-sm',
-          state.kind === 'success' && 'text-emerald-400',
-          state.kind === 'error' && 'text-destructive',
+          effectiveState.kind === 'success' && 'text-emerald-400',
+          effectiveState.kind === 'error' && 'text-destructive',
         )}
       >
-        {state.message}
+        {effectiveState.message}
       </p>
 
       {session ? (
