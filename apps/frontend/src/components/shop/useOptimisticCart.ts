@@ -1,7 +1,7 @@
 import { startTransition, useOptimistic } from 'react';
 
 import type { ShopCartLine } from '@/components/shop/shopStore';
-import { useCartLines, useShop } from '@/components/shop/shopStore';
+import { useCartLines, useRemoveFromCart, useSetQuantity } from '@/components/shop/shopStore';
 
 type OptimisticCartAction =
   | { type: 'set-quantity'; productId: string; quantity: number }
@@ -32,7 +32,8 @@ const applyOptimisticCartAction = (
 
 export function useOptimisticCart() {
   const cartLines = useCartLines();
-  const { removeFromCart, setQuantity } = useShop();
+  const removeFromCart = useRemoveFromCart();
+  const setQuantity = useSetQuantity();
   const [optimisticCartLines, applyOptimisticUpdate] = useOptimistic(
     cartLines,
     applyOptimisticCartAction,

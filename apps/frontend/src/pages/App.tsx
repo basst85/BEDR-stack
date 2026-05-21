@@ -1,12 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
-import { useShop } from '@/components/shop/shopStore';
+import { useCartCount } from '@/components/shop/shopStore';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function App() {
-  const { cartCount } = useShop();
+  const cartCount = useCartCount();
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">

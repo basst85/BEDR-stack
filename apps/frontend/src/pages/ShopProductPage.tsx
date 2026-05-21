@@ -8,7 +8,7 @@ import {
   shopSecondaryButtonClassName,
 } from '@/components/shop/buttonStyles';
 import { SeoHead } from '@/components/SeoHead';
-import { useShop } from '@/components/shop/shopStore';
+import { useAddToCart, useCartCount } from '@/components/shop/shopStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +16,8 @@ import { formatShopPrice, getShopProduct } from '@/lib/shop';
 
 export function ShopProductPage() {
   const { productId = '' } = useParams();
-  const { addToCart, cartCount } = useShop();
+  const addToCart = useAddToCart();
+  const cartCount = useCartCount();
   const [optimisticCartCount, addOptimisticCartCount] = useOptimistic(
     cartCount,
     (count, quantity: number) => count + quantity,

@@ -5,7 +5,7 @@ import { ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { fetchSession, loginUser, logoutUser, queryKeys, type SessionResponse } from '@/lib/api';
+import { fetchSession, loginUser, logoutUser, queryKeys } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 import { SectionTile } from './SectionTile';
@@ -116,9 +116,7 @@ export function DemoLoginPanel() {
 
   const effectiveState = localState ?? state;
   const pending = isLoginPending || logoutMutation.isPending || sessionQuery.isFetching;
-  const session =
-    (queryClient.getQueryData(queryKeys.session()) as SessionResponse | undefined) ??
-    sessionQuery.data;
+  const session = sessionQuery.data;
 
   return (
     <SectionTile

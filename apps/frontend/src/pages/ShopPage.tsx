@@ -6,7 +6,7 @@ import {
   shopSecondaryButtonClassName,
 } from '@/components/shop/buttonStyles';
 import { SeoHead } from '@/components/SeoHead';
-import { useShop } from '@/components/shop/shopStore';
+import { useAddToCart } from '@/components/shop/shopStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +20,7 @@ import {
 import { formatShopPrice, shopProducts } from '@/lib/shop';
 
 export function ShopPage() {
-  const { addToCart } = useShop();
+  const addToCart = useAddToCart();
 
   return (
     <>

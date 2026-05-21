@@ -66,12 +66,28 @@ const useShopStore = create<ShopContextValue>((set) => ({
   },
 }));
 
-export function useShop() {
-  return useShopStore();
+export function useCart() {
+  return useShopStore((state) => state.cart);
+}
+
+export function useCartCount() {
+  return useShopStore((state) => state.cartCount);
+}
+
+export function useAddToCart() {
+  return useShopStore((state) => state.addToCart);
+}
+
+export function useSetQuantity() {
+  return useShopStore((state) => state.setQuantity);
+}
+
+export function useRemoveFromCart() {
+  return useShopStore((state) => state.removeFromCart);
 }
 
 export function useCartLines() {
-  const { cart } = useShop();
+  const cart = useCart();
 
   return cart.flatMap<ShopCartLine>((line) => {
     const product = getShopProduct(line.productId);

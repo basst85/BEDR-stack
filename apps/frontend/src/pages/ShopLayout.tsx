@@ -1,13 +1,13 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { shopGhostButtonClassName } from '@/components/shop/buttonStyles';
-import { useShop } from '@/components/shop/shopStore';
+import { useCartCount } from '@/components/shop/shopStore';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function ShopLayout() {
-  const { cartCount } = useShop();
+  const cartCount = useCartCount();
 
   return (
     <div className="min-h-screen bg-white text-[#111111]">
