@@ -12,7 +12,7 @@ export function App() {
           </Badge>
           <div className="space-y-1">
             <h1 className="text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
-              BEDR stack starter
+              Starter
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base">
               Bun, React, and Elysia foundation for your next project.

@@ -13,8 +13,14 @@ import '@fontsource/geist-mono/latin-500.css';
 import '@fontsource/geist-mono/latin-600.css';
 import '@fontsource/geist-mono/latin-700.css';
 
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { App } from './pages/App';
+import { DashboardPage } from './pages/DashboardPage';
 import { HomePage } from './pages/HomePage';
+import { ShopCartPage } from './pages/ShopCartPage';
+import { ShopLayout } from './pages/ShopLayout';
+import { ShopPage } from './pages/ShopPage';
+import { ShopProductPage } from './pages/ShopProductPage';
 import { queryClient } from '@/lib/query-client';
 import './styles/global.css';
 
@@ -28,6 +34,33 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          {
+            path: 'dashboard',
+            element: <DashboardPage />,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: '/shop',
+    element: <ShopLayout />,
+    children: [
+      {
+        index: true,
+        element: <ShopPage />,
+      },
+      {
+        path: 'cart',
+        element: <ShopCartPage />,
+      },
+      {
+        path: ':productId',
+        element: <ShopProductPage />,
       },
     ],
   },

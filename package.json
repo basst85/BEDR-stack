@@ -12,6 +12,8 @@
   "scripts": {
     "dev:frontend": "bun --cwd apps/frontend dev",
     "dev:backend": "bun --cwd apps/backend dev",
+    "demo:install": "bun run scripts/apply-frontend-template.ts demo && bun run db:migrate",
+    "demo:remove": "bun run scripts/apply-frontend-template.ts base",
     "test": "bun --cwd apps/backend test",
     "test:backend": "bun --cwd apps/backend test",
     "lint": "eslint .",

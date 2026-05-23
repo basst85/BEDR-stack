@@ -7,7 +7,7 @@ type SeoHeadProps = {
 
 import { Helmet } from 'react-helmet-async';
 
-const defaultDescription = 'BEDR demo application';
+const defaultDescription = 'BEDR starter application';
 
 export function SeoHead({ title, description, robots, canonicalPath }: SeoHeadProps) {
   const metaDescription = description ?? defaultDescription;

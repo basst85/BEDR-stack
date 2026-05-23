@@ -1,7 +1,11 @@
 import { startTransition, useOptimistic } from 'react';
 
 import type { ShopCartLine } from '@/components/shop/shopStore';
-import { useCartLines, useRemoveFromCart, useSetQuantity } from '@/components/shop/shopStore';
+import {
+  useCartLines,
+  useRemoveFromCart,
+  useSetQuantity,
+} from '@/components/shop/shopStore';
 
 type OptimisticCartAction =
   | { type: 'set-quantity'; productId: string; quantity: number }
