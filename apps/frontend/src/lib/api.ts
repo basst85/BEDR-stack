@@ -20,6 +20,34 @@ export type SessionResponse = {
   user: SessionUser;
 };
 
+export type BookingAvailabilityItem = {
+  unitType: string;
+  title: string;
+  stockLimit: number;
+  reserved: number;
+  remaining: number;
+};
+
+export type BookingRequestPayload = {
+  unitType: string;
+  quantity: number;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  checkIn: string;
+  checkOut: string;
+  notes?: string;
+};
+
+export type BookingConfirmation = {
+  id: string;
+  confirmationCode: string;
+  unitType: string;
+  quantity: number;
+  status: 'pending';
+  remaining: number;
+};
+
 type ApiErrorResponse = {
   message?: string;
 };
@@ -46,6 +74,7 @@ const throwApiError = async (response: Response, fallbackMessage: string): Promi
 export const queryKeys = {
   session: () => ['session'] as const,
   users: () => ['users'] as const,
+  bookingAvailability: () => ['booking-availability'] as const,
 };
 
 export const registerUser = async (payload: RegisterPayload): Promise<UserItem> => {
@@ -116,6 +145,34 @@ export const fetchUsers = async (): Promise<UserItem[]> => {
   return parseJson<UserItem[]>(response);
 };
 
+export const fetchBookingAvailability = async (): Promise<BookingAvailabilityItem[]> => {
+  const response = await fetch(`${apiBaseUrl}/api/bookings/availability`);
+
+  if (!response.ok) {
+    return throwApiError(response, 'Could not load the unit availability.');
+  }
+
+  return parseJson<BookingAvailabilityItem[]>(response);
+};
+
+export const submitBookingRequest = async (
+  payload: BookingRequestPayload,
+): Promise<BookingConfirmation> => {
+  const response = await fetch(`${apiBaseUrl}/api/bookings`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Could not save the booking request.');
+  }
+
+  return parseJson<BookingConfirmation>(response);
+};
+
 export const sessionQueryOptions = () =>
   queryOptions({
     queryKey: queryKeys.session(),
@@ -127,5 +184,12 @@ export const usersQueryOptions = () =>
   queryOptions({
     queryKey: queryKeys.users(),
     queryFn: fetchUsers,
+    retry: false,
+  });
+
+export const bookingAvailabilityQueryOptions = () =>
+  queryOptions({
+    queryKey: queryKeys.bookingAvailability(),
+    queryFn: fetchBookingAvailability,
     retry: false,
   });
