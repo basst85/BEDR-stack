@@ -1,5 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 
+import { config } from '@backend/core/config';
 import { db } from '@backend/core/db';
 
 import {
@@ -10,15 +11,14 @@ import {
 } from './booking.model';
 
 const unitCatalog: Record<UnitTypeValue, { title: string }> = {
-  'woonunit-420-2': { title: 'Compact Warm Nest' },
-  'woonunit-570-2': { title: 'Duo Basecamp' },
-  'woonunit-660-2': { title: 'Comfort Couple Lodge' },
-  'woonunit-730': { title: 'Team Cabin' },
-  'woonunit-733': { title: 'Family Cross Lodge' },
-  'woonunit-730-8-persoons': { title: 'Crew Sleep Wagon' },
+  '420': { title: '2 persoons unit met stapelbed' },
+  '660': { title: '2 persoons unit met 2 losse bedden' },
+  '730': { title: '4 persoons unit met twee stapelbedden' },
+  '733': { title: '4 persoons unit met stapelbed en twee persoonsbed' },
+  '900': { title: '3 - 5 persoons VIP unit' },
+  cabine: { title: '2 persoons compartiment in 8 persoons slaapwagen' },
 };
 
-const stockLimit = 5;
 const validUnitTypes = new Set<UnitTypeValue>(unitTypeValues);
 
 export class BookingInventoryError extends Error {
@@ -42,6 +42,7 @@ export class BookingService {
 
     return unitTypeValues.map((unitType) => {
       const reserved = reservedMap.get(unitType) ?? 0;
+      const stockLimit = config.bookingStockByUnitType[unitType];
 
       return {
         unitType,
@@ -60,6 +61,7 @@ export class BookingService {
 
     const unitType = payload.unitType as UnitTypeValue;
     const reserved = await this.getReservedCount(unitType);
+  const stockLimit = config.bookingStockByUnitType[unitType];
     const remaining = stockLimit - reserved;
 
     if (payload.quantity > remaining) {

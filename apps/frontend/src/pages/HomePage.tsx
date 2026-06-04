@@ -2,10 +2,20 @@ import { ArrowRight, ChevronDown, Flame, Footprints, MapPinned, ShowerHead, User
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
+import { Image } from '@/components/Image';
 import { SeoHead } from '@/components/SeoHead';
+import { UnitImageCarousel } from '@/components/UnitImageCarousel';
 import { Button } from '@/components/ui/button';
 import { bookingAvailabilityQueryOptions } from '@/lib/api';
-import { conceptPoints, faqItems, getCapacityCount, locationHighlights, lodgeOffers } from '@/lib/velo-village';
+import { formatCurrency, resolvePublicAssetPath, useI18n } from '@/lib/i18n';
+import { siteCopy } from '@/lib/site-copy';
+import {
+  getConceptPoints,
+  getCapacityCount,
+  getFaqItems,
+  getLocationHighlights,
+  getUnitTypes,
+} from '@/lib/velo-village';
 
 function CapacityInline({ label }: { label: string }) {
   const capacity = getCapacityCount(label);
@@ -23,50 +33,69 @@ function CapacityInline({ label }: { label: string }) {
 }
 
 export function HomePage() {
+  const { locale, localizePath } = useI18n();
+  const copy = siteCopy[locale].home;
+  const conceptPoints = getConceptPoints(locale);
+  const faqItems = getFaqItems(locale);
+  const locationHighlights = getLocationHighlights(locale);
+  const unitTypes = getUnitTypes(locale);
   const availabilityQuery = useQuery(bookingAvailabilityQueryOptions());
   const availability = availabilityQuery.data ?? [];
+  const heroImageSrc = resolvePublicAssetPath('impressie.jpg');
 
   return (
     <>
       <SeoHead
-        title="VeloVillage Zeddam | Pop-up camping voor het EK Veldrijden"
-        description="Mobile-first pop-up campingwebsite voor VeloVillage in Zeddam. Comfortabele woonunits dicht bij het EK Veldrijden-parcours, met warme bookingflow en beperkte beschikbaarheid per type."
-        canonicalPath="/"
+        title={copy.seoTitle}
+        description={copy.seoDescription}
+        canonicalPath={localizePath('/')}
       />
 
       <div className="space-y-5">
         <section
-          className="relative overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.24)]"
-          style={{
-            backgroundImage:
-              "linear-gradient(90deg, rgba(19,42,28,0.72) 0%, rgba(33,54,47,0.52) 42%, rgba(51,66,70,0.34) 100%), url('https://images.unsplash.com/photo-1697446303480-6d4351452812?auto=format&fit=crop&w=1600&q=80')",
-            backgroundPosition: 'center',
-            backgroundSize: 'cover',
-          }}
+          className="relative overflow-hidden rounded-[2rem] border border-white/10"
         >
-          <div className="max-w-3xl space-y-5 p-6 sm:p-7 lg:px-8 lg:py-12">
-            <h1 className="font-display text-4xl font-extrabold uppercase leading-none tracking-[0.04em] text-white sm:text-5xl">
-              Overnacht in luxe en warmte tijdens het EK Veldrijden 2026 in Zeddam.
-            </h1>
-            <p className="max-w-2xl text-base leading-7 text-stone-200">
-              Volledig geisoleerde en verwarmde woonunits op loopafstand van het parcours. Boek jouw verblijf voor het weekend van 6 t/m 9 november.
-            </p>
-            <Button asChild size="lg" className="rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]">
-              <a href="#units">
-                Bekijk beschikbare units
-                <ArrowRight />
-              </a>
-            </Button>
+          <Image
+            src={heroImageSrc}
+            alt={copy.heroAlt}
+            width={1600}
+            height={900}
+            quality={80}
+            fill
+            sizes="100vw"
+            className="scale-[1.02] object-cover brightness-[0.62] contrast-[0.92] saturate-[0.82]"
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(214,202,160,0.12),transparent_24%),linear-gradient(90deg,rgba(8,14,11,0.82)_0%,rgba(14,24,19,0.62)_34%,rgba(26,38,35,0.28)_66%,rgba(24,34,31,0.14)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,12,10,0.14)_0%,rgba(10,16,14,0.06)_28%,rgba(7,12,10,0.24)_100%)]" />
+          <div className="relative z-10 p-5 sm:p-7 lg:px-8 lg:py-12">
+            <div className="max-w-3xl">
+              <h1 className="font-display text-4xl font-extrabold uppercase leading-none tracking-[0.04em] text-white sm:text-5xl">
+                {copy.heroTitle}
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-stone-100/92 sm:text-lg">
+                {copy.heroDescription}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-stone-200/90">
+                <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5">{copy.heroTags[0]}</span>
+                <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5">{copy.heroTags[1]}</span>
+              </div>
+              <Button asChild size="lg" className="mt-6 rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]">
+                <a href={localizePath('/#units')}>
+                  {copy.heroCta}
+                  <ArrowRight />
+                </a>
+              </Button>
+            </div>
           </div>
         </section>
 
         <section className="space-y-4 rounded-[2rem] border border-white/10 bg-card/80 p-6 sm:p-7">
           <article>
             <h2 className="mt-3 font-display text-3xl font-bold uppercase tracking-[0.04em] text-white">
-              Modder buiten, comfort binnen
+              {copy.introTitle}
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-stone-300">
-              Veldrijden hoort koud, nat en rauw te zijn. Je verblijf niet. Overdag sta je in het Bergherbos aan de kant te schreeuwen, 's avonds trek je de modderige schoenen uit en stap je een behaaglijke, solide TotalRent unit binnen met eigen douche en keuken.
+              {copy.introBody}
             </p>
           </article>
 
@@ -91,43 +120,51 @@ export function HomePage() {
 
         <section id="units" className="rounded-[2rem] border border-white/10 bg-card/80 p-6 sm:p-7">
           <div className="max-w-2xl space-y-2">
-            <p className="text-xs uppercase tracking-[0.24em] text-stone-400">Het aanbod</p>
             <h2 className="font-display text-3xl font-bold uppercase tracking-[0.04em] text-white">
-              Jouw TotalRent woonunit
+              {copy.unitsTitle}
             </h2>
             <p className="text-sm leading-7 text-stone-300">
-              We presenteren de units als drie heldere premium categorieen voor deze week. Per type zijn maximaal vijf units beschikbaar binnen VeloVillage.
+              {copy.unitsBody}
             </p>
           </div>
 
           <div className="mt-5 grid gap-3">
-            {lodgeOffers.map((offer) => {
-              const unitAvailability = availability.find((item) => item.unitType === offer.bookingUnitId);
+            {unitTypes.map((unit) => {
+              const unitAvailability = availability.find((item) => item.unitType === unit.id);
 
               return (
-                <article key={offer.title} className="rounded-[1.5rem] border border-white/10 bg-black/15 p-5">
+                <article key={unit.id} className="rounded-[1.5rem] border border-white/10 bg-black/15 p-5">
+                  <UnitImageCarousel images={unit.images} title={unit.title} />
+
                   <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-white">{offer.title}</h3>
-                    <p className="text-sm text-stone-300">
-                      <CapacityInline label={offer.capacity} />
-                    </p>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-xl font-semibold text-white">{unit.title}</h3>
+                        <p className="mt-1 text-sm text-stone-300">
+                          <CapacityInline label={unit.capacityLabel} />
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-2xl font-bold leading-none text-[#F0E7C9]">{formatCurrency(unit.pricePerNight, locale)}</p>
+                        <p className="mt-1 text-xs text-stone-400">{copy.perNight}</p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mt-4 space-y-3 text-sm text-stone-300">
-                    <p className="leading-6">{offer.features}</p>
-                    <p className="leading-6">
-                      <span className="text-stone-400">Perfect voor:</span> {offer.perfectFor}
-                    </p>
+                    <p className="leading-6">{unit.summary}</p>
                     <div className="rounded-2xl border border-dashed border-[#76BD23]/35 bg-[#1C5733]/20 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-[#D6CAA0]">Plattegrond</p>
-                      <p className="mt-2 leading-6 text-stone-200">{offer.layoutHint}</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#D6CAA0]">{copy.layoutLabel}</p>
+                      <p className="mt-2 leading-6 text-stone-200">{unit.sleepingLayout}</p>
                     </div>
                     <div className="flex items-center justify-between gap-3 pt-1">
                       <p className="text-sm text-stone-400">
-                        {unitAvailability ? `${unitAvailability.remaining} van ${unitAvailability.stockLimit} beschikbaar` : '5 van 5 beschikbaar'}
+                        {unitAvailability
+                          ? copy.availabilityLabel(unitAvailability.remaining)
+                          : copy.availabilityLoading}
                       </p>
                       <Button asChild className="rounded-full bg-[#76BD23] px-4 text-[#10311c] hover:bg-[#6eb220]">
-                        <Link to={`/boeken?unit=${offer.bookingUnitId}`}>Kies</Link>
+                        <Link to={localizePath(`/boeken?unit=${unit.id}#unit-selector`)}>{copy.choose}</Link>
                       </Button>
                     </div>
                   </div>
@@ -139,12 +176,11 @@ export function HomePage() {
 
         <section id="location" className="space-y-4 rounded-[2rem] border border-white/10 bg-card/80 p-6 sm:p-7">
           <article>
-            <p className="text-xs uppercase tracking-[0.24em] text-stone-400">Locatie & bereikbaarheid</p>
             <h2 className="mt-3 font-display text-3xl font-bold uppercase tracking-[0.04em] text-white">
-              Dicht bij de cross, logisch in gebruik
+              {copy.locationTitle}
             </h2>
             <p className="mt-4 text-sm leading-7 text-stone-300">
-              VeloVillage is bedoeld als compacte uitvalsbasis voor een intens sportweekend. Geen grote omwegen, maar een plek waar je snel terug bent om op te warmen, te douchen en de volgende dag fris te starten.
+              {copy.locationBody}
             </p>
           </article>
 
@@ -166,7 +202,7 @@ export function HomePage() {
         <section id="faq" className="rounded-[2rem] border border-white/10 bg-card/80 p-6 sm:p-7">
           <div className="max-w-2xl space-y-2">
             <h2 className="font-display text-3xl font-bold uppercase tracking-[0.04em] text-white">
-              Veelgestelde vragen
+              {copy.faqTitle}
             </h2>
           </div>
 

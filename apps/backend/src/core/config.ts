@@ -1,3 +1,5 @@
+import { type UnitTypeValue, unitTypeValues } from '@backend/modules/booking/booking.model';
+
 const getEnv = (name: string, fallback: string) => process.env[name] ?? fallback;
 
 export const isProduction = process.env.NODE_ENV === 'production';
@@ -19,10 +21,49 @@ const resolveJwtSecret = () => {
 };
 
 const normalizeOrigin = (origin: string) => origin.replace(/\/$/, '');
+const parseCsvEnv = (name: string) =>
+  getEnv(name, '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
 const configuredCorsOrigins = getEnv('CORS_ORIGIN', '')
   .split(',')
   .map((origin) => normalizeOrigin(origin.trim()))
   .filter(Boolean);
+const configuredImageAllowedHosts = parseCsvEnv('IMAGE_ALLOWED_HOSTS');
+
+const parseNonNegativeIntegerEnv = (name: string, fallback: number) => {
+  const rawValue = (process.env[name] ?? '').trim();
+
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsedValue = Number(rawValue);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+    throw new Error(`${name} must be set to a whole number greater than or equal to 0.`);
+  }
+
+  return parsedValue;
+};
+
+const bookingStockEnvByUnitType: Record<UnitTypeValue, string> = {
+  '420': 'BOOKING_STOCK_420',
+  '660': 'BOOKING_STOCK_660',
+  '730': 'BOOKING_STOCK_730',
+  '733': 'BOOKING_STOCK_733',
+  '900': 'BOOKING_STOCK_900',
+  cabine: 'BOOKING_STOCK_CABINE',
+};
+
+const bookingStockByUnitType = Object.fromEntries(
+  unitTypeValues.map((unitType) => [
+    unitType,
+    parseNonNegativeIntegerEnv(bookingStockEnvByUnitType[unitType], 5),
+  ]),
+) as Record<UnitTypeValue, number>;
 
 export const isAllowedCorsOrigin = (origin: string | null) => {
   if (!origin) {
@@ -47,7 +88,9 @@ export const isAllowedCorsOrigin = (origin: string | null) => {
 export const config = {
   port: Number(getEnv('PORT', '3000')),
   corsOrigins: configuredCorsOrigins,
+  imageAllowedHosts: configuredImageAllowedHosts,
   cookieName: getEnv('COOKIE_NAME', 'bedr_session'),
   jwtSecret: resolveJwtSecret(),
   databaseUrl: getEnv('DATABASE_URL', 'dev.db'),
+  bookingStockByUnitType,
 };

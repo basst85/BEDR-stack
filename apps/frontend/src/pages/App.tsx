@@ -3,34 +3,81 @@ import { Menu, X } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
+import { useI18n, type Locale } from '@/lib/i18n';
+
+function LanguageSwitcher({ onSelect }: { onSelect?: () => void }) {
+  const { copy, locale, locales, setLocale } = useI18n();
+  const flagByLocale: Record<Locale, string> = {
+    nl: 'NL',
+    en: 'EN',
+  };
+
+  const flagIconByLocale: Record<Locale, string> = {
+    nl: '🇳🇱',
+    en: '🇬🇧',
+  };
+
+  return (
+    <div className="flex items-center gap-1 rounded-full border border-border/60 bg-black/10 p-1 text-xs text-stone-200">
+      {locales.map((item) => {
+        const isActive = item === locale;
+
+        return (
+          <button
+            key={item}
+            type="button"
+            onClick={() => {
+              setLocale(item as Locale);
+              onSelect?.();
+            }}
+            aria-label={`${copy.language.switchLabel}: ${flagByLocale[item as Locale]}`}
+            title={flagByLocale[item as Locale]}
+            className={`rounded-full px-2.5 py-1 font-semibold transition ${
+              isActive
+                ? 'bg-[#76BD23] text-[#10311c]'
+                : 'text-stone-200 hover:bg-[#1C5733]/18 hover:text-white'
+            }`}
+          >
+            <span className="text-sm leading-none">{flagIconByLocale[item as Locale]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function App() {
   const location = useLocation();
-  const isHome = location.pathname === '/';
+  const { copy, localizePath } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { href: '/#units', label: 'Units' },
-    { href: '/#location', label: 'Locatie' },
-    { href: '/#faq', label: 'FAQ' },
+    { href: localizePath('/#units'), label: copy.nav.units },
+    { href: localizePath('/#location'), label: copy.nav.location },
+    { href: localizePath('/#faq'), label: copy.nav.faq },
   ];
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
     <div className="relative isolate overflow-hidden">
-      <main className="mx-auto min-h-screen w-full max-w-5xl px-4 pb-8 pt-4 sm:px-6 lg:pb-10">
-        <header className="border-border/70 bg-card/65 sticky top-3 z-20 mb-5 rounded-[1.5rem] border px-4 py-3 backdrop-blur-xl sm:px-5">
+      <div className="fixed inset-x-0 top-4 z-30 px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-5xl">
+          <header className="border-border/70 bg-card/75 rounded-[1.5rem] border px-4 py-3 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <Link to="/" className="space-y-1">
+              <Link to={localizePath('/')} className="space-y-1">
                 <p className="font-display text-xl font-extrabold tracking-[0.08em] text-white sm:text-2xl">
-                  VeloVillage
+                  CrossVillage
                 </p>
               </Link>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden lg:block">
+                <LanguageSwitcher />
+              </div>
+
               <nav className="hidden gap-2 overflow-x-auto pb-1 md:flex md:pb-0">
                 {navItems.map((item) => (
                   <a
@@ -42,15 +89,15 @@ export function App() {
                   </a>
                 ))}
                 <NavLink
-                  to="/voorwaarden"
+                  to={localizePath('/voorwaarden')}
                   className="rounded-full border border-border/60 px-3 py-1.5 text-sm text-stone-200 transition hover:border-[#76BD23]/70 hover:bg-[#1C5733]/18 hover:text-white"
                 >
-                  Voorwaarden
+                  {copy.nav.terms}
                 </NavLink>
               </nav>
 
               <Button asChild size="sm" className="rounded-full bg-[#76BD23] px-4 text-[#10311c] hover:bg-[#6eb220]">
-                <Link to="/boeken" onClick={closeMobileMenu}>Boek nu</Link>
+                <Link to={localizePath('/boeken')} onClick={closeMobileMenu}>{copy.nav.bookNow}</Link>
               </Button>
 
               <Button
@@ -69,6 +116,7 @@ export function App() {
 
           {isMobileMenuOpen ? (
             <nav className="mt-3 grid gap-2 border-t border-white/8 pt-3 md:hidden">
+              <LanguageSwitcher onSelect={closeMobileMenu} />
               {navItems.map((item) => (
                 <a
                   key={item.href}
@@ -80,29 +128,28 @@ export function App() {
                 </a>
               ))}
               <NavLink
-                to="/voorwaarden"
+                to={localizePath('/voorwaarden')}
                 onClick={closeMobileMenu}
                 className="rounded-2xl border border-border/60 bg-black/10 px-4 py-3 text-sm text-stone-100 transition hover:border-[#76BD23]/70 hover:bg-[#1C5733]/18 hover:text-white"
               >
-                Voorwaarden
+                {copy.nav.terms}
               </NavLink>
             </nav>
           ) : null}
 
-          {!isHome ? (
-            <div className="mt-4 border-t border-white/8 pt-4 text-sm text-stone-300">
-              <Link to="/" onClick={closeMobileMenu} className="transition hover:text-white">
-                Terug naar de homepage
-              </Link>
-            </div>
-          ) : null}
-        </header>
+          </header>
+        </div>
+      </div>
 
-        <Outlet />
+      <main className="min-h-screen w-full pb-8 pt-28 sm:pt-30 lg:pb-10">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+          <Outlet />
 
-        <footer className="mt-6 px-1 text-sm text-stone-400">
-          <p>Warme woonunits op loopafstand van het EK Veldrijden in Zeddam.</p>
-        </footer>
+          <footer className="mt-6 flex flex-col gap-3 px-1 text-sm text-stone-400 sm:flex-row sm:items-center sm:justify-between">
+            <p>{copy.footer.summary}</p>
+            <LanguageSwitcher />
+          </footer>
+        </div>
       </main>
     </div>
   );

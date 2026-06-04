@@ -2,12 +2,12 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { t } from 'elysia';
 
 export const unitTypeValues = [
-  'woonunit-420-2',
-  'woonunit-570-2',
-  'woonunit-660-2',
-  'woonunit-730',
-  'woonunit-733',
-  'woonunit-730-8-persoons',
+  '420',
+  '660',
+  '730',
+  '733',
+  '900',
+  'cabine',
 ] as const;
 
 export const bookingRequestsTable = sqliteTable('booking_requests', {
@@ -28,7 +28,7 @@ export const bookingRequestsTable = sqliteTable('booking_requests', {
 
 export const bookingRequestPayload = t.Object({
   unitType: t.String({ minLength: 1 }),
-  quantity: t.Integer({ minimum: 1, maximum: 5 }),
+  quantity: t.Integer({ minimum: 1, maximum: 999 }),
   guestName: t.String({ minLength: 2 }),
   guestEmail: t.String({ format: 'email' }),
   guestPhone: t.String({ minLength: 8 }),

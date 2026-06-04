@@ -1,6 +1,26 @@
 import { queryOptions } from '@tanstack/react-query';
 
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+const normalizeBaseUrl = (value: string) => value.replace(/\/$/, '');
+
+const resolveApiBaseUrl = () => {
+  const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+  if (configuredApiUrl) {
+    return normalizeBaseUrl(configuredApiUrl);
+  }
+
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3000';
+  }
+
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return normalizeBaseUrl(window.location.origin);
+  }
+
+  return '';
+};
+
+export const apiBaseUrl = resolveApiBaseUrl();
 
 export type UserItem = {
   id: string;

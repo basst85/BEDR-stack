@@ -48,4 +48,30 @@ describe('config security', () => {
 
     process.env.CORS_ORIGIN = previousCorsOrigin;
   });
+
+  test('reads booking stock limits per unit type from environment variables', async () => {
+    const previous420 = process.env.BOOKING_STOCK_420;
+    const previousCabine = process.env.BOOKING_STOCK_CABINE;
+
+    process.env.BOOKING_STOCK_420 = '12';
+    process.env.BOOKING_STOCK_CABINE = '7';
+
+    const { config } = await import(`../src/core/config.ts?booking-stock=${Date.now()}`);
+
+    expect(config.bookingStockByUnitType['420']).toBe(12);
+    expect(config.bookingStockByUnitType.cabine).toBe(7);
+
+    if (previous420 === undefined) {
+      delete process.env.BOOKING_STOCK_420;
+    } else {
+      process.env.BOOKING_STOCK_420 = previous420;
+    }
+
+    if (previousCabine === undefined) {
+      delete process.env.BOOKING_STOCK_CABINE;
+      return;
+    }
+
+    process.env.BOOKING_STOCK_CABINE = previousCabine;
+  });
 });

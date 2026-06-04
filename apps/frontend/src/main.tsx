@@ -9,33 +9,62 @@ import '@fontsource/open-sans/latin-600.css';
 import '@fontsource/open-sans/latin-700.css';
 import '@fontsource/open-sans/latin-800.css';
 
+import { LocaleProvider, LocaleRedirect, withAppBasePath } from '@/lib/i18n';
 import { App } from './pages/App';
 import { BookingPage } from './pages/BookingPage';
 import { HomePage } from './pages/HomePage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { TermsPage } from './pages/TermsPage';
 import { queryClient } from '@/lib/query-client';
 import './styles/global.css';
 
 document.documentElement.classList.add('dark');
 
+function LocalizedApp() {
+  return (
+    <LocaleProvider>
+      <App />
+    </LocaleProvider>
+  );
+}
+
 const router = createBrowserRouter([
   {
-    path: '/',
-    element: <App />,
+    path: withAppBasePath('/'),
+    element: <LocaleRedirect />,
+  },
+  {
+    path: withAppBasePath('/boeken'),
+    element: <LocaleRedirect />,
+  },
+  {
+    path: withAppBasePath('/voorwaarden'),
+    element: <LocaleRedirect />,
+  },
+  {
+    element: <LocalizedApp />,
     children: [
       {
-        index: true,
+        path: withAppBasePath('/:locale'),
         element: <HomePage />,
       },
       {
-        path: 'boeken',
+        path: withAppBasePath('/:locale/boeken'),
         element: <BookingPage />,
       },
       {
-        path: 'voorwaarden',
+        path: withAppBasePath('/:locale/voorwaarden'),
         element: <TermsPage />,
       },
+      {
+        path: withAppBasePath('/:locale/*'),
+        element: <NotFoundPage />,
+      },
     ],
+  },
+  {
+    path: withAppBasePath('*'),
+    element: <NotFoundPage />,
   },
 ]);
 

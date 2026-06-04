@@ -4,6 +4,7 @@ import { Elysia } from 'elysia';
 import { config, isAllowedCorsOrigin } from './core/config';
 import { authController } from './modules/auth/controller';
 import { bookingController } from './modules/booking/controller';
+import { imagesController } from './modules/images/controller';
 import { usersController } from './modules/users/controller';
 
 export const app = new Elysia()
@@ -15,7 +16,9 @@ export const app = new Elysia()
     }),
   )
   .get('/health', () => ({ status: 'ok' }))
-  .group('/api', (api) => api.use(authController).use(usersController).use(bookingController));
+  .group('/api', (api) =>
+    api.use(authController).use(usersController).use(bookingController).use(imagesController),
+  );
 
 export type App = typeof app;
 

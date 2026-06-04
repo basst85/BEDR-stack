@@ -12,6 +12,13 @@ process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.DATABASE_URL = testDatabasePath;
 process.env.CORS_ORIGIN = 'http://localhost:5173';
 process.env.COOKIE_NAME = 'bedr_test_session';
+process.env.IMAGE_ALLOWED_HOSTS = 'images.unsplash.com';
+process.env.BOOKING_STOCK_420 = '2';
+process.env.BOOKING_STOCK_660 = '4';
+process.env.BOOKING_STOCK_730 = '3';
+process.env.BOOKING_STOCK_733 = '2';
+process.env.BOOKING_STOCK_900 = '1';
+process.env.BOOKING_STOCK_CABINE = '6';
 
 const { sqlite } = await import('@backend/core/db');
 
@@ -25,8 +32,25 @@ sqlite.exec(`
   );
 `);
 
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS booking_requests (
+    id TEXT PRIMARY KEY NOT NULL,
+    unit_type TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    guest_name TEXT NOT NULL,
+    guest_email TEXT NOT NULL,
+    guest_phone TEXT NOT NULL,
+    check_in TEXT NOT NULL,
+    check_out TEXT NOT NULL,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at INTEGER NOT NULL
+  );
+`);
+
 beforeEach(() => {
   sqlite.exec('DELETE FROM users;');
+  sqlite.exec('DELETE FROM booking_requests;');
 });
 
 afterAll(() => {

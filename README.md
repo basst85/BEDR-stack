@@ -119,6 +119,8 @@ Before deploying or sharing the project, verify:
 - `VITE_API_URL` points to your real backend
 - `CORS_ORIGIN` allows your actual frontend hosts
 - `JWT_SECRET`, `COOKIE_NAME`, and database settings match your environment
+- `IMAGE_ALLOWED_HOSTS` controls which remote hosts the backend image optimizer may fetch from
+- booking stock can be configured per unit type with `BOOKING_STOCK_420`, `BOOKING_STOCK_660`, `BOOKING_STOCK_730`, `BOOKING_STOCK_733`, `BOOKING_STOCK_900`, and `BOOKING_STOCK_CABINE`
 - Docker build args and exposed ports match your deployment setup
 
 ### Example Migration Path
