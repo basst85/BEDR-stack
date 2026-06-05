@@ -64,7 +64,7 @@ describe('booking routes', () => {
     const acceptedPayload = (await acceptedResponse.json()) as BookingConfirmation;
 
     expect(acceptedResponse.status).toBe(200);
-    expect(acceptedPayload.confirmationCode).toMatch(/^VV-/);
+    expect(acceptedPayload.confirmationCode).toMatch(/^\d{6}$/);
     expect(acceptedPayload.lines).toContainEqual(expect.objectContaining({ unitType: '420', quantity: 1, remaining: 1 }));
     expect(acceptedPayload.lines).toContainEqual(expect.objectContaining({ unitType: '660', quantity: 2, remaining: 2 }));
 

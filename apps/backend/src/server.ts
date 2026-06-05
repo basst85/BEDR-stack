@@ -3,6 +3,7 @@ import { Elysia } from 'elysia';
 
 import { config, isAllowedCorsOrigin } from './core/config';
 import { authController } from './modules/auth/controller';
+import { bmsController } from './modules/booking/bms.controller';
 import { bookingController } from './modules/booking/controller';
 import { imagesController } from './modules/images/controller';
 import { usersController } from './modules/users/controller';
@@ -11,13 +12,18 @@ export const app = new Elysia()
   .use(
     cors({
       origin: (request) => isAllowedCorsOrigin(request.headers.get('origin')),
-      methods: ['GET', 'POST'],
+      methods: ['GET', 'POST', 'DELETE'],
       credentials: true,
     }),
   )
   .get('/health', () => ({ status: 'ok' }))
   .group('/api', (api) =>
-    api.use(authController).use(usersController).use(bookingController).use(imagesController),
+    api
+      .use(authController)
+      .use(usersController)
+      .use(bookingController)
+      .use(imagesController)
+      .use(bmsController),
   );
 
 export type App = typeof app;

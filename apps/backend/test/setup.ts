@@ -36,6 +36,7 @@ sqlite.exec(`
   CREATE TABLE IF NOT EXISTS booking_requests (
     id TEXT PRIMARY KEY NOT NULL,
     request_group_id TEXT NOT NULL,
+    confirmation_code TEXT,
     unit_type TEXT NOT NULL,
     quantity INTEGER NOT NULL,
     guest_name TEXT NOT NULL,
@@ -49,9 +50,24 @@ sqlite.exec(`
   );
 `);
 
+try {
+  sqlite.exec(`ALTER TABLE booking_requests ADD COLUMN confirmation_code TEXT;`);
+} catch {
+  // Column already exists in reused local test databases.
+}
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS unit_stock (
+    unit_type TEXT PRIMARY KEY NOT NULL,
+    stock INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+`);
+
 beforeEach(() => {
   sqlite.exec('DELETE FROM users;');
   sqlite.exec('DELETE FROM booking_requests;');
+  sqlite.exec('DELETE FROM unit_stock;');
 });
 
 afterAll(() => {

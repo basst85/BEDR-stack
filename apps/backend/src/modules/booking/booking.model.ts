@@ -13,6 +13,7 @@ export const unitTypeValues = [
 export const bookingRequestsTable = sqliteTable('booking_requests', {
   id: text('id').primaryKey(),
   requestGroupId: text('request_group_id').notNull(),
+  confirmationCode: text('confirmation_code'),
   unitType: text('unit_type').notNull(),
   quantity: integer('quantity').notNull(),
   guestName: text('guest_name').notNull(),
@@ -23,6 +24,14 @@ export const bookingRequestsTable = sqliteTable('booking_requests', {
   notes: text('notes'),
   status: text('status').notNull().default('pending'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const unitStockTable = sqliteTable('unit_stock', {
+  unitType: text('unit_type').primaryKey(),
+  stock: integer('stock').notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
     .notNull()
     .$defaultFn(() => new Date()),
 });

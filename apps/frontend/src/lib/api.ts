@@ -72,6 +72,43 @@ export type BookingConfirmation = {
   status: 'pending';
 };
 
+export type BmsSessionResponse = {
+  authenticated: boolean;
+  user?: string;
+};
+
+export type BmsBookingItem = {
+  id: string;
+  requestGroupId: string;
+  confirmationCode: string | null;
+  unitType: string;
+  quantity: number;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  checkIn: string;
+  checkOut: string;
+  notes: string | null;
+  status: string;
+  createdAt: string;
+};
+
+export type BmsStockItem = {
+  unitType: string;
+  title: string;
+  defaultStock: number;
+  customStock: number | null;
+  totalStock: number;
+  reserved: number;
+  remaining: number;
+  isOverridden: boolean;
+};
+
+export type BmsLoginPayload = {
+  username: string;
+  password: string;
+};
+
 type ApiErrorResponse = {
   message?: string;
 };
@@ -217,3 +254,115 @@ export const bookingAvailabilityQueryOptions = () =>
     queryFn: fetchBookingAvailability,
     retry: false,
   });
+
+export const loginBms = async (payload: BmsLoginPayload): Promise<BmsSessionResponse> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/login`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Inloggen mislukt. Controleer uw inloggegevens.');
+  }
+
+  return parseJson<BmsSessionResponse>(response);
+};
+
+export const fetchBmsSession = async (): Promise<BmsSessionResponse> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/me`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Geen actieve BMS sessie gevonden.');
+  }
+
+  return parseJson<BmsSessionResponse>(response);
+};
+
+export const logoutBms = async (): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de sessie niet beëindigen.');
+  }
+};
+
+export const fetchBmsBookings = async (): Promise<BmsBookingItem[]> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/bookings`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de boekingen niet laden.');
+  }
+
+  return parseJson<BmsBookingItem[]>(response);
+};
+
+export const cancelBmsBooking = async (requestGroupId: string): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/bookings/${requestGroupId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de boeking niet annuleren.');
+  }
+};
+
+export const deleteBmsBooking = async (requestGroupId: string): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/bookings/${requestGroupId}/permanent`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de boeking niet definitief verwijderen.');
+  }
+};
+
+export const approveBmsBooking = async (requestGroupId: string): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/bookings/${requestGroupId}/approve`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de boeking niet accorderen.');
+  }
+};
+
+export const fetchBmsStocks = async (): Promise<BmsStockItem[]> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/stocks`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de voorraden niet laden.');
+  }
+
+  return parseJson<BmsStockItem[]>(response);
+};
+
+export const updateBmsStock = async (payload: { unitType: string; stock: number }): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/stocks`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de voorraad niet bijwerken.');
+  }
+};

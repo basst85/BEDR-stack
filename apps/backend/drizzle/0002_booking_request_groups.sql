@@ -1,1 +1,0 @@
-ALTER TABLE `booking_requests` ADD `request_group_id` text NOT NULL DEFAULT '';

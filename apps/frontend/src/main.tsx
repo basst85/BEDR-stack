@@ -15,6 +15,7 @@ import { BookingPage } from './pages/BookingPage';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { TermsPage } from './pages/TermsPage';
+import { BmsAdminPage } from './pages/BmsAdminPage';
 import { queryClient } from '@/lib/query-client';
 import './styles/global.css';
 
@@ -61,6 +62,10 @@ const router = createBrowserRouter([
         element: <NotFoundPage />,
       },
     ],
+  },
+  {
+    path: withAppBasePath('/bms-admin'),
+    element: <BmsAdminPage />,
   },
   {
     path: withAppBasePath('*'),

@@ -29,3 +29,29 @@ export const clearSessionCookie = () =>
     sameSite: 'lax',
     secure: isProduction,
   });
+
+export const readBmsSessionToken = (cookieHeader?: string | null) => {
+  if (!cookieHeader) {
+    return null;
+  }
+
+  return parse(cookieHeader)['bms_session'] ?? null;
+};
+
+export const createBmsSessionCookie = (token: string) =>
+  serialize('bms_session', token, {
+    httpOnly: true,
+    maxAge: weekInSeconds,
+    path: '/',
+    sameSite: 'lax',
+    secure: isProduction,
+  });
+
+export const clearBmsSessionCookie = () =>
+  serialize('bms_session', '', {
+    httpOnly: true,
+    maxAge: 0,
+    path: '/',
+    sameSite: 'lax',
+    secure: isProduction,
+  });

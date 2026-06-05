@@ -1,3 +1,5 @@
+import { createElement, type ReactNode } from 'react';
+
 import type { Locale } from '@/lib/i18n';
 
 type HomeCopy = {
@@ -29,7 +31,7 @@ type BookingCopy = {
   pageTitle: string;
   successEyebrow: string;
   successTitle: string;
-  successMessage: (confirmationCode: string) => string;
+  successMessage: (confirmationCode: string) => ReactNode;
   backHome: string;
   makeAnother: string;
   step1Title: string;
@@ -139,8 +141,11 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       pageTitle: 'Reserveer je warme EK-basis in 3 stappen',
       successEyebrow: 'Aanvraag ontvangen',
       successTitle: 'Je aanvraag staat klaar voor opvolging.',
-      successMessage: (confirmationCode) =>
-        `Referentie ${confirmationCode}. We hebben je gekozen units ontvangen en nemen contact met je op voor de definitieve bevestiging.`,
+      successMessage: (confirmationCode) => [
+        'Boekingscode ',
+        createElement('strong', { className: 'font-bold text-white', key: confirmationCode }, confirmationCode),
+        '. We hebben je reservering ontvangen en nemen contact met je op voor de definitieve bevestiging.',
+      ],
       backHome: 'Terug naar homepage',
       makeAnother: 'Nog een aanvraag doen',
       step1Title: '1. Kies je unittype',
@@ -291,8 +296,11 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       pageTitle: 'Reserve your warm championship base in 3 steps',
       successEyebrow: 'Request received',
       successTitle: 'Your request is ready for follow-up.',
-      successMessage: (confirmationCode) =>
-        `Reference ${confirmationCode}. We received your selected units and will contact you to confirm the reservation.`,
+      successMessage: (confirmationCode) => [
+        'Booking code ',
+        createElement('strong', { className: 'font-bold text-white', key: confirmationCode }, confirmationCode),
+        '. We received your selected units and will contact you to confirm the reservation.',
+      ],
       backHome: 'Back to homepage',
       makeAnother: 'Submit another request',
       step1Title: '1. Choose your units',

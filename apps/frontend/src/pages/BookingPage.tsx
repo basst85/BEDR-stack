@@ -432,14 +432,6 @@ export function BookingPage() {
                 <Button asChild className="rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]">
                   <Link to={localizePath('/')}>{copy.backHome}</Link>
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full border-[#00953B]/25 bg-[#1C5733]/16 text-white hover:bg-[#1C5733]/22"
-                  onClick={() => mutation.reset()}
-                >
-                  {copy.makeAnother}
-                </Button>
               </div>
             </div>
           ) : null}

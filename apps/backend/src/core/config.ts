@@ -124,4 +124,6 @@ export const config = {
   jwtSecret: resolveJwtSecret(),
   databaseUrl: getEnv('DATABASE_URL', 'dev.db'),
   bookingStockByUnitType,
+  bmsUser: getEnv('BMS_USER', 'crossvillage'),
+  bmsPassword: getEnv('BMS_PASSWORD', 'admin123'),
 };

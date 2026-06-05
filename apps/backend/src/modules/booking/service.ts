@@ -1,10 +1,11 @@
-import { eq, sql } from 'drizzle-orm';
+import { desc, eq, ne, sql } from 'drizzle-orm';
 
 import { config } from '@backend/core/config';
 import { db } from '@backend/core/db';
 
 import {
   bookingRequestsTable,
+  unitStockTable,
   type BookingRequestPayload,
   type UnitTypeValue,
   unitTypeValues,
@@ -20,6 +21,8 @@ const unitCatalog: Record<UnitTypeValue, { title: string }> = {
 };
 
 const validUnitTypes = new Set<UnitTypeValue>(unitTypeValues);
+const confirmationCodeMin = 100000;
+const confirmationCodeMax = 999999;
 
 export class BookingInventoryError extends Error {
   constructor(message: string) {
@@ -29,6 +32,27 @@ export class BookingInventoryError extends Error {
 }
 
 export class BookingService {
+  private async generateConfirmationCode() {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const candidate = String(
+        crypto.getRandomValues(new Uint32Array(1))[0] % (confirmationCodeMax - confirmationCodeMin + 1) +
+          confirmationCodeMin,
+      );
+
+      const existing = await db
+        .select({ confirmationCode: bookingRequestsTable.confirmationCode })
+        .from(bookingRequestsTable)
+        .where(eq(bookingRequestsTable.confirmationCode, candidate))
+        .get();
+
+      if (!existing) {
+        return candidate;
+      }
+    }
+
+    throw new Error('Kon geen unieke boekingscode genereren.');
+  }
+
   async getAvailability() {
     const reservations = await db
       .select({
@@ -36,13 +60,17 @@ export class BookingService {
         reserved: sql<number>`coalesce(sum(${bookingRequestsTable.quantity}), 0)`,
       })
       .from(bookingRequestsTable)
+      .where(ne(bookingRequestsTable.status, 'cancelled'))
       .groupBy(bookingRequestsTable.unitType);
 
     const reservedMap = new Map(reservations.map((item) => [item.unitType, Number(item.reserved)]));
 
+    const stockOverrides = await db.select().from(unitStockTable);
+    const stockOverridesMap = new Map(stockOverrides.map((row) => [row.unitType, row.stock]));
+
     return unitTypeValues.map((unitType) => {
       const reserved = reservedMap.get(unitType) ?? 0;
-      const stockLimit = config.bookingStockByUnitType[unitType];
+      const stockLimit = stockOverridesMap.get(unitType) ?? config.bookingStockByUnitType[unitType];
 
       return {
         unitType,
@@ -84,11 +112,13 @@ export class BookingService {
     }
 
     const requestGroupId = crypto.randomUUID();
+    const confirmationCode = await this.generateConfirmationCode();
 
     await db.insert(bookingRequestsTable).values(
       Array.from(groupedLines.entries()).map(([unitType, quantity]) => ({
         id: crypto.randomUUID(),
         requestGroupId,
+        confirmationCode,
         unitType,
         quantity,
         guestName: payload.guestName,
@@ -103,7 +133,7 @@ export class BookingService {
 
     return {
       id: requestGroupId,
-      confirmationCode: `VV-${requestGroupId.slice(0, 8).toUpperCase()}`,
+      confirmationCode,
       lines: Array.from(groupedLines.entries()).map(([unitType, quantity]) => ({
         unitType,
         quantity,
@@ -111,5 +141,90 @@ export class BookingService {
       })),
       status: 'pending' as const,
     };
+  }
+
+  async updateStock(unitType: UnitTypeValue, stock: number) {
+    if (!validUnitTypes.has(unitType)) {
+      throw new Error('Unknown unit type selected.');
+    }
+
+    await db
+      .insert(unitStockTable)
+      .values({
+        unitType,
+        stock,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: unitStockTable.unitType,
+        set: {
+          stock,
+          updatedAt: new Date(),
+        },
+      });
+  }
+
+  async getAllBookings() {
+    return db
+      .select()
+      .from(bookingRequestsTable)
+      .orderBy(desc(bookingRequestsTable.createdAt));
+  }
+
+  async cancelBookingGroup(requestGroupId: string) {
+    const existingBooking = await db
+      .select({ requestGroupId: bookingRequestsTable.requestGroupId })
+      .from(bookingRequestsTable)
+      .where(eq(bookingRequestsTable.requestGroupId, requestGroupId))
+      .get();
+
+    if (!existingBooking) {
+      throw new Error('Boeking niet gevonden.');
+    }
+
+    await db
+      .update(bookingRequestsTable)
+      .set({ status: 'cancelled' })
+      .where(eq(bookingRequestsTable.requestGroupId, requestGroupId));
+  }
+
+  async approveBookingGroup(requestGroupId: string) {
+    const existingBooking = await db
+      .select({ requestGroupId: bookingRequestsTable.requestGroupId })
+      .from(bookingRequestsTable)
+      .where(eq(bookingRequestsTable.requestGroupId, requestGroupId))
+      .get();
+
+    if (!existingBooking) {
+      throw new Error('Boeking niet gevonden.');
+    }
+
+    await db
+      .update(bookingRequestsTable)
+      .set({ status: 'approved' })
+      .where(eq(bookingRequestsTable.requestGroupId, requestGroupId));
+  }
+
+  async deleteBookingGroup(requestGroupId: string) {
+    const existingBooking = await db
+      .select({
+        requestGroupId: bookingRequestsTable.requestGroupId,
+        status: bookingRequestsTable.status,
+      })
+      .from(bookingRequestsTable)
+      .where(eq(bookingRequestsTable.requestGroupId, requestGroupId))
+      .get();
+
+    if (!existingBooking) {
+      throw new Error('Boeking niet gevonden.');
+    }
+
+    if (existingBooking.status !== 'cancelled') {
+      throw new Error('Alleen geannuleerde boekingen kunnen definitief verwijderd worden.');
+    }
+
+    await db
+      .delete(bookingRequestsTable)
+      .where(eq(bookingRequestsTable.requestGroupId, requestGroupId));
   }
 }
