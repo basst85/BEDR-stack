@@ -18,7 +18,7 @@ process.env.BOOKING_STOCK_660 = '4';
 process.env.BOOKING_STOCK_730 = '3';
 process.env.BOOKING_STOCK_733 = '2';
 process.env.BOOKING_STOCK_900 = '1';
-process.env.BOOKING_STOCK_CABINE = '6';
+process.env.BOOKING_STOCK_CABINE = '8';
 
 const { sqlite } = await import('@backend/core/db');
 
@@ -35,6 +35,7 @@ sqlite.exec(`
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS booking_requests (
     id TEXT PRIMARY KEY NOT NULL,
+    request_group_id TEXT NOT NULL,
     unit_type TEXT NOT NULL,
     quantity INTEGER NOT NULL,
     guest_name TEXT NOT NULL,

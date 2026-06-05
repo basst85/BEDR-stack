@@ -29,12 +29,16 @@ type BookingCopy = {
   pageTitle: string;
   successEyebrow: string;
   successTitle: string;
-  successMessage: (confirmationCode: string, remaining: number) => string;
+  successMessage: (confirmationCode: string) => string;
   backHome: string;
   makeAnother: string;
   step1Title: string;
   step1Description: string;
-  selected: string;
+  personsLabel: string;
+  quantityLabel: string;
+  selectedUnitsTitle: string;
+  selectedUnitsEmpty: string;
+  priceForStayLabel: (nightLabel: string) => string;
   perNight: string;
   layoutLabel: string;
   availabilityLoading: string;
@@ -102,22 +106,22 @@ type SiteCopy = {
 export const siteCopy: Record<Locale, SiteCopy> = {
   nl: {
     home: {
-      seoTitle: 'CrossVillage Zeddam | Pop-up camping voor het EK Veldrijden',
+      seoTitle: 'CrossVillage Zeddam | Verwarmde woonunits bij EK Veldrijden 2026',
       seoDescription:
-        'Mobile-first pop-up campingwebsite voor CrossVillage in Zeddam. Comfortabele woonunits dicht bij het EK Veldrijden-parcours, met warme bookingflow en beperkte beschikbaarheid per type.',
+        'Boek een verwarmde woonunit in CrossVillage Zeddam voor het EK Veldrijden 2026. Verblijf van 5 t/m 9 november op 6 minuten van het parcours, met eigen douche en keuken.',
       heroAlt: 'Warme eventcamping vlak bij het veldritparcours',
-      heroTitle: 'Overnacht in luxe en warmte tijdens het EK Veldrijden 2026 in Zeddam.',
+      heroTitle: 'Overnacht in warmte tijdens het EK Veldrijden 2026 in Zeddam.',
       heroDescription:
-        'Volledig geisoleerde en verwarmde woonunits op loopafstand van het parcours. Boek jouw verblijf tussen donderdag 5 november en dinsdag 10 november.',
-      heroTags: ['5 nachten mogelijk', 'Loopafstand van het parcours'],
+        'Volledig geisoleerde en verwarmde woonunits op slechts 6 minuten rijden van het parcours. Boek jouw verblijf van donderdag 5 november tot en met 9 november.',
+      heroTags: ['5 nachten', '6 minuten rijden van het parcours'],
       heroCta: 'Bekijk beschikbare units',
       introTitle: 'Modder buiten, comfort binnen',
       introBody:
-        "Veldrijden hoort koud, nat en rauw te zijn. Je verblijf niet. Overdag sta je in het Bergherbos aan de kant te schreeuwen, 's avonds trek je de modderige schoenen uit en stap je een behaaglijke, solide TotalRent unit binnen met eigen douche en keuken.",
-      unitsTitle: 'Jouw woonunit',
+        "Veldrijden hoort koud, nat en rauw te zijn. Je accommodatie niet. Overdag beleef je de strijd in het Bergherbos van dichtbij, 's avonds kom je tot rust in een warme en comfortabele Totalrent unit met eigen douche en keuken.",
+      unitsTitle: 'Kies jouw verblijf',
       unitsBody:
-        'Kies uit verschillende types comfortabele, verwarmde units. Het beschikbaar aantal per type is beperkt, dus wacht niet te lang met boeken.',
-      locationTitle: 'Dicht bij de cross, logisch in gebruik',
+        'Kies het verblijf dat bij jou past. Ga voor een comfortabele, verwarmde woonunit en beleef het EK veldrijden zonder in te leveren op comfort. Het aantal beschikbare units per type is beperkt, dus wacht niet te lang met boeken.',
+      locationTitle: 'Dicht bij de cross, comfortabel verblijven',
       locationBody:
         'CrossVillage is bedoeld als compacte uitvalsbasis voor een intens sportweekend. Geen grote omwegen, maar een plek waar je snel terug bent om op te warmen, te douchen en de volgende dag fris te starten.',
       faqTitle: 'Veelgestelde vragen',
@@ -128,21 +132,25 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       perNight: 'per nacht',
     },
     booking: {
-      seoTitle: 'Boeken | CrossVillage Zeddam',
+      seoTitle: 'Boek je woonunit | CrossVillage Zeddam',
       seoDescription:
-        'Afleidingsvrije booking funnel voor CrossVillage: kies je woonunit, vul je gegevens in en leg je EK-verblijf vast.',
+        'Kies je unit, controleer de beschikbaarheid en vraag direct je verblijf aan voor CrossVillage Zeddam tijdens het EK Veldrijden van 5 t/m 9 november 2026.',
       stepLabels: ['Unit', 'Gegevens', 'Betalen'],
       pageTitle: 'Reserveer je warme EK-basis in 3 stappen',
       successEyebrow: 'Aanvraag ontvangen',
       successTitle: 'Je aanvraag staat klaar voor opvolging.',
-      successMessage: (confirmationCode, remaining) =>
-        `Referentie ${confirmationCode}. Deze unitsoort heeft nu nog ${remaining} exemplaren beschikbaar.`,
+      successMessage: (confirmationCode) =>
+        `Referentie ${confirmationCode}. We hebben je gekozen units ontvangen en nemen contact met je op voor de definitieve bevestiging.`,
       backHome: 'Terug naar homepage',
       makeAnother: 'Nog een aanvraag doen',
       step1Title: '1. Kies je unittype',
       step1Description:
-        'Alleen types met resterende voorraad zijn te boeken. De backend bewaakt de per type ingestelde voorraadlimiet.',
-      selected: 'Geselecteerd',
+        'Kies per unitsoort hoeveel exemplaren je nodig hebt. In de dropdown zie je alleen het aantal dat nog beschikbaar is.',
+      personsLabel: 'Personen',
+      quantityLabel: 'Aantal',
+      selectedUnitsTitle: 'Gekozen units',
+      selectedUnitsEmpty: 'Selecteer minimaal één unit om door te gaan naar je gegevens.',
+      priceForStayLabel: (nightLabel) => `Prijs voor ${nightLabel}`,
       perNight: 'per nacht',
       layoutLabel: 'Indeling',
       availabilityLoading: 'Beschikbaarheid wordt geladen',
@@ -190,62 +198,82 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       sendRequest: 'Aanvraag versturen',
     },
     terms: {
-      seoTitle: 'Voorwaarden | CrossVillage Zeddam',
+      seoTitle: 'Algemene voorwaarden | CrossVillage Zeddam',
       seoDescription:
-        'Compacte voorwaardenpagina voor de CrossVillage booking funnel, inclusief voorraadlimiet per unitsoort.',
+        'Lees de algemene voorwaarden van CrossVillage Zeddam over reservering, betaling, annulering, huisregels, aansprakelijkheid en verblijf tijdens het EK-weekend.',
       eyebrow: 'Algemene voorwaarden',
-      title: 'Compact, duidelijk en afgestemd op een korte eventfunnel',
+      title: 'Algemene Voorwaarden Cross Village Zeddam',
       intro:
-        'Voor CrossVillage is dit bewust een lichte subpagina. De voorwaarden ondersteunen de conversie, zonder de gebruiker uit de boekingsflow te trekken.',
+        'Onderstaande voorwaarden zijn van toepassing op alle aanbiedingen, reserveringen en overeenkomsten met betrekking tot de accommodaties van Cross Village Zeddam.',
       backToBooking: 'Terug naar boeken',
       backToHome: 'Naar homepage',
       sections: [
         {
-          title: '1. Reserveringsaanvraag',
+          title: 'Artikel 1: Definities',
           body:
-            'Een reservering via deze funnel geldt als aanvraag. CrossVillage bevestigt de aanvraag pas nadat beschikbaarheid, verblijfsperiode en operationele haalbaarheid zijn gecontroleerd.',
+            'Organisatie: Totalrent B.V., handelend onder de naam Cross Village Zeddam. Gevestigd aan de Stirlingstraat 5, 7037 DG te Beek. KVK-nummer: 84429240.\n\nGast/Hoofdboeker: De natuurlijke persoon of rechtspersoon die de overeenkomst aangaat met de Organisatie voor het huren van een accommodatie.\n\nEvenement: Het EK Veldrijden te Zeddam.\n\nVerblijfsperiode: De periode tussen 5 november en 9 november.\n\nAccommodatie/Unit: De door de Organisatie verhuurde tijdelijke woonunits (inclusief eigen sanitair en stroom, tenzij anders aangegeven, zoals bij de slaapwagencabines).',
         },
         {
-          title: '2. Voorraadlimiet',
+          title: 'Artikel 2: Toepasselijkheid',
           body:
-            'Per unitsoort wordt het beschikbare aantal via environment variables ingesteld. Zodra die backendlimiet is bereikt, kan er voor dat type geen nieuwe aanvraag meer worden ingediend.',
+            'Deze algemene voorwaarden zijn van toepassing op alle aanbiedingen, reserveringen en overeenkomsten met betrekking tot alle accommodaties die door Totalrent B.V. via crossvillagezeddam.com worden aangeboden.\n\nDoor het maken van een boeking gaat de Gast akkoord met deze algemene voorwaarden.\n\nAfwijkingen van deze voorwaarden zijn slechts geldig indien deze uitdrukkelijk en schriftelijk door de Organisatie zijn bevestigd.',
         },
         {
-          title: '3. Gebruik van de units',
+          title: 'Artikel 3: Reservering, Prijzen en Betaling',
           body:
-            'De units zijn tijdelijke woonvoorzieningen voor het EK-weekend en dienen zorgvuldig te worden gebruikt. Bezetting mag het opgegeven maximum van het gekozen type niet overschrijden.',
+            'Alle vermelde prijzen op de website zijn inclusief BTW, stroom- en waterverbruik, tenzij uitdrukkelijk anders vermeld.\n\nEen reservering is pas definitief nadat de Gast het volledige boekingsbedrag (100%) heeft voldaan en hiervan een schriftelijke (e-mail) bevestiging heeft ontvangen.\n\nIndien een betaling wordt gestorneerd of niet succesvol is, vervalt de reservering automatisch en heeft de Gast geen recht op de gereserveerde accommodatie.',
         },
         {
-          title: '4. Wijzigingen en annulering',
+          title: 'Artikel 4: Annulering door de Gast',
           body:
-            'Definitieve wijzigings- en annuleringsregels worden meegeleverd in de bevestiging. Deze pagina toont de compacte productversie van de voorwaarden voor de funnel.',
+            'Gezien het tijdelijke en evenement-gebonden karakter van Cross Village Zeddam, hanteren wij de volgende annuleringsvoorwaarden:\n\nBij annulering tot 60 dagen voor de ingangsdatum van het verblijf wordt 50% van de totale reissom in rekening gebracht (u ontvangt 50% retour).\n\nBij annulering tussen 60 dagen en 30 dagen voor de ingangsdatum van het verblijf wordt 75% van de totale reissom in rekening gebracht (u ontvangt 25% retour).\n\nBij annulering binnen 30 dagen voor de ingangsdatum van het verblijf, of bij een no-show (niet komen opdagen), is de Gast 100% van de reissom verschuldigd en vindt er geen restitutie plaats.\n\nAnnuleringen dienen altijd schriftelijk (per e-mail) te worden doorgegeven. De datum van ontvangst van de e-mail geldt als annuleringsdatum.\n\nWij adviseren onze gasten om zelfstandig een kortlopende annuleringsverzekering af te sluiten.',
         },
         {
-          title: '5. Betaling',
+          title: 'Artikel 5: Aankomst, Verblijf en Vertrek',
           body:
-            'De huidige flow registreert aanvragen. In een vervolgfase kan deze stap gekoppeld worden aan directe online betaling of een factuurtraject.',
+            'In- en uitchecken: Inchecken is mogelijk op de aankomstdag vanaf 10.00 uur. Uitchecken dient te gebeuren op de vertrekdag uiterlijk om 11.00 uur.\n\nGebruik accommodatie: De accommodatie mag uitsluitend worden bewoond door het maximaal aantal personen dat voor de betreffende unit is aangegeven (varierend van 2 tot 5 personen, afhankelijk van het geboekte type).\n\nBezoekers: Het is niet toegestaan om zonder voorafgaande toestemming van de Organisatie derden (niet-gasten) in de units te laten overnachten.',
+        },
+        {
+          title: 'Artikel 6: Huisregels',
+          body:
+            'Om het verblijf voor alle gasten en de omgeving prettig te houden, gelden op Cross Village Zeddam de volgende huisregels:\n\nNachtrust: Tussen 23:00 uur en 07:00 uur dient het stil te zijn op het terrein.\n\nVuur en veiligheid: Open vuur, vuurkorven, fakkels en (wegwerp)barbecues zijn ten strengste verboden op het gehele terrein en in de units.\n\nHuisdieren: Huisdieren zijn in de woonunits en op het terrein niet toegestaan, tenzij vooraf schriftelijk goedgekeurd door de Organisatie.\n\nParkeren: Voertuigen dienen geparkeerd te worden op de daarvoor aangewezen parkeerplaatsen en niet direct naast de woonunits, tenzij anders aangegeven door de Organisatie.\n\nBij overtreding van de huisregels behoudt de Organisatie zich het recht voor om de Gast(en) per direct de toegang tot het terrein en de accommodatie te ontzeggen, zonder recht op restitutie van de betaalde reissom.',
+        },
+        {
+          title: 'Artikel 7: Schade en Aansprakelijkheid Gast',
+          body:
+            'De Organisatie brengt geen borg in rekening. Dit ontslaat de Gast echter niet van de verantwoordelijkheid om als een goed huisvader met de accommodatie om te gaan.\n\nDe Hoofdboeker is hoofdelijk aansprakelijk voor alle schade aan de woonunit, inventaris, sanitaire voorzieningen, of het terrein, veroorzaakt door het doen of nalaten van de Gast zelf of diens mede-reizigers.\n\nIndien er na vertrek schade wordt geconstateerd die niet vooraf is gemeld, zullen de reparatie- of vervangingskosten direct aan de Hoofdboeker worden gefactureerd. Deze factuur dient binnen 14 dagen te worden voldaan.',
+        },
+        {
+          title: 'Artikel 8: Aansprakelijkheid Organisatie & Overmacht',
+          body:
+            'Het verblijf op Cross Village Zeddam is geheel op eigen risico. De Organisatie is niet aansprakelijk voor diefstal, verlies of beschadiging van eigendommen van de Gast, noch voor persoonlijk letsel, opgelopen tijdens het verblijf.\n\nDe Organisatie is niet aansprakelijk voor storingen in de nutsvoorzieningen (stroom en water), tenzij er sprake is van grove nalatigheid vanuit de Organisatie.\n\nOvermacht (Afgelasting Evenement): Indien het EK Veldrijden door overmacht (bijv. extreme weersomstandigheden, overheidsmaatregelen of besluiten van de evenementenorganisatie) wordt afgelast, geeft dit de Gast geen recht op kosteloze annulering van de woonunit of restitutie van de reissom, tenzij de Organisatie (Totalrent B.V.) zelf niet meer in staat is de accommodatie te leveren.',
+        },
+        {
+          title: 'Artikel 9: Klachten en Toepasselijk Recht',
+          body:
+            'Eventuele klachten tijdens het verblijf dienen direct, op locatie, bij de Organisatie te worden gemeld, zodat deze de kans krijgt de klacht op te lossen.\n\nOp alle overeenkomsten gesloten met Totalrent B.V. is uitsluitend het Nederlands recht van toepassing.\n\nGeschillen zullen uitsluitend worden voorgelegd aan de bevoegde rechter in het arrondissement waar Totalrent B.V. is gevestigd.',
         },
       ],
     },
   },
   en: {
     home: {
-      seoTitle: 'CrossVillage Zeddam | Pop-up camping for the European Cyclo-cross Championships',
+      seoTitle: 'CrossVillage Zeddam | Heated units near the 2026 European Cyclo-cross Championships',
       seoDescription:
-        'Mobile-first pop-up camping website for CrossVillage in Zeddam. Comfortable accommodation units close to the European Cyclo-cross Championships course, with a warm booking flow and limited availability per unit type.',
+        'Book a heated accommodation unit at CrossVillage Zeddam for the 2026 European Cyclo-cross Championships. Stay from 5 to 9 November just 6 minutes from the course, with private shower and kitchen.',
       heroAlt: 'Warm event camping close to the cyclo-cross course',
-      heroTitle: 'Stay in warmth and comfort during the 2026 European Cyclo-cross Championships in Zeddam.',
+      heroTitle: 'Stay in warmth during the 2026 European Cyclo-cross Championships in Zeddam.',
       heroDescription:
-        'Fully insulated and heated accommodation units within walking distance of the course. Book your stay between Thursday 5 November and Tuesday 10 November.',
-      heroTags: ['Up to 5 nights', 'Walking distance from the course'],
+        'Fully insulated and heated accommodation units just 6 minutes by car from the course. Book your stay from Thursday 5 November through Monday 9 November.',
+      heroTags: ['5 nights', '6-minute drive from the course'],
       heroCta: 'View available units',
       introTitle: 'Mud outside, comfort inside',
       introBody:
-        "Cyclo-cross should feel cold, wet and raw. Your stay should not. During the day you cheer at the Bergherbos course, and in the evening you kick off your muddy shoes and step into a warm, solid TotalRent unit with its own shower and kitchen.",
-      unitsTitle: 'Your accommodation unit',
+        "Cyclo-cross should feel cold, wet and raw. Your accommodation should not. During the day you experience the action up close in the Bergherbos, and in the evening you unwind in a warm and comfortable Totalrent unit with its own shower and kitchen.",
+      unitsTitle: 'Choose your stay',
       unitsBody:
-        'Choose from several types of comfortable, heated units. Availability per type is limited, so do not wait too long before booking.',
-      locationTitle: 'Close to the race, practical to use',
+        'Choose the stay that suits you best. Go for a comfortable, heated accommodation unit and experience the European Cyclo-cross Championships without giving up comfort. Availability per unit type is limited, so do not wait too long before booking.',
+      locationTitle: 'Close to the race, comfortably staying nearby',
       locationBody:
         'CrossVillage is designed as a compact base for an intense race weekend. No unnecessary detours, just a place where you can quickly warm up, shower and start the next day refreshed.',
       faqTitle: 'Frequently asked questions',
@@ -256,21 +284,25 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       perNight: 'per night',
     },
     booking: {
-      seoTitle: 'Book | CrossVillage Zeddam',
+      seoTitle: 'Book your accommodation unit | CrossVillage Zeddam',
       seoDescription:
-        'Distraction-free booking funnel for CrossVillage: choose your accommodation unit, enter your details and secure your championship stay.',
+        'Choose your accommodation unit, check live availability and submit your stay request for CrossVillage Zeddam during the European Cyclo-cross Championships from 5 to 9 November 2026.',
       stepLabels: ['Unit', 'Details', 'Payment'],
       pageTitle: 'Reserve your warm championship base in 3 steps',
       successEyebrow: 'Request received',
       successTitle: 'Your request is ready for follow-up.',
-      successMessage: (confirmationCode, remaining) =>
-        `Reference ${confirmationCode}. This unit type now has ${remaining} units remaining.`,
+      successMessage: (confirmationCode) =>
+        `Reference ${confirmationCode}. We received your selected units and will contact you to confirm the reservation.`,
       backHome: 'Back to homepage',
       makeAnother: 'Submit another request',
-      step1Title: '1. Choose your unit type',
+      step1Title: '1. Choose your units',
       step1Description:
-        'Only unit types with remaining stock can be booked. The backend enforces the configured stock limit per type.',
-      selected: 'Selected',
+        'Choose how many units you need per unit type. The dropdown only shows the quantity that is still available.',
+      personsLabel: 'Persons',
+      quantityLabel: 'Quantity',
+      selectedUnitsTitle: 'Selected units',
+      selectedUnitsEmpty: 'Select at least one unit to continue to your details.',
+      priceForStayLabel: (nightLabel) => `Price for ${nightLabel}`,
       perNight: 'per night',
       layoutLabel: 'Layout',
       availabilityLoading: 'Loading availability',
@@ -318,40 +350,60 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       sendRequest: 'Submit request',
     },
     terms: {
-      seoTitle: 'Terms | CrossVillage Zeddam',
+      seoTitle: 'General terms | CrossVillage Zeddam',
       seoDescription:
-        'Compact terms page for the CrossVillage booking funnel, including stock limits per unit type.',
+        'Read the general terms for CrossVillage Zeddam covering reservation, payment, cancellation, house rules, liability and your stay during the championship weekend.',
       eyebrow: 'General terms',
-      title: 'Compact, clear and tailored to a short event funnel',
+      title: 'General Terms Cross Village Zeddam',
       intro:
-        'For CrossVillage this is intentionally a lightweight subpage. The terms support conversion without pulling the user out of the booking flow.',
+        'The terms below apply to all offers, reservations and agreements relating to the accommodations of Cross Village Zeddam.',
       backToBooking: 'Back to booking',
       backToHome: 'Go to homepage',
       sections: [
         {
-          title: '1. Reservation request',
+          title: 'Article 1: Definitions',
           body:
-            'A reservation made through this funnel counts as a request. CrossVillage only confirms the request after availability, stay period and operational feasibility have been checked.',
+            'Organisation: Totalrent B.V., trading under the name Cross Village Zeddam. Established at Stirlingstraat 5, 7037 DG in Beek. Chamber of Commerce number: 84429240.\n\nGuest/Lead Booker: The natural person or legal entity entering into the agreement with the Organisation for the rental of accommodation.\n\nEvent: The European Cyclo-cross Championships in Zeddam.\n\nStay Period: The period between 5 November and 9 November.\n\nAccommodation/Unit: The temporary accommodation units rented out by the Organisation, including private sanitary facilities and electricity unless stated otherwise, such as the sleeper wagon cabins.',
         },
         {
-          title: '2. Stock limit',
+          title: 'Article 2: Applicability',
           body:
-            'The available quantity per unit type is configured through environment variables. Once that backend limit has been reached, no new request can be submitted for that type.',
+            'These general terms apply to all offers, reservations and agreements relating to all accommodations offered by Totalrent B.V. via crossvillagezeddam.com.\n\nBy making a booking, the Guest agrees to these general terms.\n\nAny deviation from these terms is only valid if expressly confirmed in writing by the Organisation.',
         },
         {
-          title: '3. Use of the units',
+          title: 'Article 3: Reservation, Prices and Payment',
           body:
-            'The units are temporary accommodation for the championship weekend and must be used with care. Occupancy may not exceed the stated maximum of the chosen unit type.',
+            'All prices listed on the website include VAT, electricity and water consumption, unless explicitly stated otherwise.\n\nA reservation only becomes final after the Guest has paid the full booking amount (100%) and has received written confirmation by email.\n\nIf a payment is reversed or unsuccessful, the reservation automatically lapses and the Guest is no longer entitled to the reserved accommodation.',
         },
         {
-          title: '4. Changes and cancellation',
+          title: 'Article 4: Cancellation by the Guest',
           body:
-            'Final change and cancellation rules are included with the confirmation. This page shows the compact product version of the terms for the funnel.',
+            'Given the temporary and event-related nature of Cross Village Zeddam, the following cancellation terms apply:\n\nIn case of cancellation up to 60 days before the start date of the stay, 50% of the total travel sum will be charged and 50% will be refunded.\n\nIn case of cancellation between 60 days and 30 days before the start date of the stay, 75% of the total travel sum will be charged and 25% will be refunded.\n\nIn case of cancellation within 30 days before the start date of the stay, or in case of a no-show, the Guest owes 100% of the travel sum and no refund will be made.\n\nCancellations must always be submitted in writing by email. The date on which the email is received counts as the cancellation date.\n\nWe advise our guests to take out their own short-term cancellation insurance.',
         },
         {
-          title: '5. Payment',
+          title: 'Article 5: Arrival, Stay and Departure',
           body:
-            'The current flow registers requests. In a later phase this step can be connected to direct online payment or an invoicing process.',
+            'Check-in and check-out: Check-in is possible on the arrival day from 10:00. Check-out must take place no later than 11:00 on the departure day.\n\nUse of accommodation: The accommodation may only be occupied by the maximum number of persons stated for the relevant unit, ranging from 2 to 5 persons depending on the booked type.\n\nVisitors: It is not permitted to allow third parties who are not guests to stay overnight in the units without prior permission from the Organisation.',
+        },
+        {
+          title: 'Article 6: House Rules',
+          body:
+            'To keep the stay pleasant for all guests and the surrounding area, the following house rules apply at Cross Village Zeddam:\n\nQuiet hours: Between 23:00 and 07:00 the site must remain quiet.\n\nFire and safety: Open fire, fire baskets, torches and disposable barbecues are strictly prohibited throughout the site and inside the units.\n\nPets: Pets are not allowed in the accommodation units or on the site unless approved in writing in advance by the Organisation.\n\nParking: Vehicles must be parked in the designated parking areas and not directly next to the accommodation units unless otherwise indicated by the Organisation.\n\nIn the event of a breach of the house rules, the Organisation reserves the right to deny the Guest or Guests immediate access to the site and accommodation without any right to a refund of the paid travel sum.',
+        },
+        {
+          title: 'Article 7: Damage and Liability of the Guest',
+          body:
+            'The Organisation does not charge a deposit. This does not release the Guest from the responsibility to treat the accommodation with proper care.\n\nThe Lead Booker is jointly and severally liable for all damage to the accommodation unit, inventory, sanitary facilities or the site caused by the acts or omissions of the Guest or fellow travellers.\n\nIf damage is found after departure that was not reported in advance, the repair or replacement costs will be invoiced directly to the Lead Booker. This invoice must be paid within 14 days.',
+        },
+        {
+          title: 'Article 8: Liability of the Organisation & Force Majeure',
+          body:
+            'Staying at Cross Village Zeddam is entirely at your own risk. The Organisation is not liable for theft, loss or damage to the Guest\'s property, nor for personal injury incurred during the stay.\n\nThe Organisation is not liable for interruptions in utilities such as electricity and water unless there is gross negligence on the part of the Organisation.\n\nForce majeure (event cancellation): If the European Cyclo-cross Championships are cancelled due to force majeure, such as extreme weather conditions, government measures or decisions by the event organisation, this does not entitle the Guest to cancel the accommodation free of charge or receive a refund, unless the Organisation (Totalrent B.V.) is itself no longer able to provide the accommodation.',
+        },
+        {
+          title: 'Article 9: Complaints and Applicable Law',
+          body:
+            'Any complaints during the stay must be reported immediately on site to the Organisation so that it has the opportunity to resolve the complaint.\n\nAll agreements concluded with Totalrent B.V. are governed exclusively by Dutch law.\n\nDisputes will be submitted exclusively to the competent court in the district where Totalrent B.V. is established.',
         },
       ],
     },

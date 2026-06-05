@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, CalendarDays, Check, CheckCircle2, LoaderCircle, Mail, Phone, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarDays, Check, LoaderCircle, Mail, Phone, Users } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import {
@@ -13,33 +13,26 @@ import { formatCurrency, type Locale, useI18n } from '@/lib/i18n';
 import { siteCopy } from '@/lib/site-copy';
 import { getCapacityCount, getUnitTypes } from '@/lib/velo-village';
 import { SeoHead } from '@/components/SeoHead';
-import { UnitImageCarousel } from '@/components/UnitImageCarousel';
-import { useMountEffect } from '@/hooks/useMountEffect';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { UnitLayoutList } from '../components/UnitLayoutList';
 
 const earliestCheckIn = '2026-11-05';
 const latestCheckIn = '2026-11-09';
-const earliestCheckOut = '2026-11-06';
-const latestCheckOut = '2026-11-10';
+const defaultCheckOut = '2026-11-10';
+
+type BookingUnit = ReturnType<typeof getUnitTypes>[number];
+type SelectedUnitLine = {
+  unit: BookingUnit;
+  quantity: number;
+  lineTotal: number;
+};
 
 function parseIsoDate(value: string) {
   const [year, month, day] = value.split('-').map(Number);
 
   return new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
-}
-
-function formatIsoDate(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function addDays(value: string, days: number) {
-  const date = parseIsoDate(value);
-
-  date.setUTCDate(date.getUTCDate() + days);
-
-  return formatIsoDate(date);
 }
 
 function getNightCount(checkIn: string, checkOut: string) {
@@ -51,32 +44,6 @@ function getNightCount(checkIn: string, checkOut: string) {
   const millisecondsPerNight = 1000 * 60 * 60 * 24;
 
   return Math.max(Math.floor(differenceInMilliseconds / millisecondsPerNight), 0);
-}
-
-function isIsoDateString(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function getDateValidationMessage(locale: Locale, checkIn: string, checkOut: string) {
-  const copy = siteCopy[locale].booking;
-
-  if (!checkIn || !checkOut || !isIsoDateString(checkIn) || !isIsoDateString(checkOut)) {
-    return copy.validations.invalidDates;
-  }
-
-  if (checkIn < earliestCheckIn || checkIn > latestCheckIn) {
-    return copy.validations.checkInRange;
-  }
-
-  if (checkOut < earliestCheckOut || checkOut > latestCheckOut) {
-    return copy.validations.checkOutRange;
-  }
-
-  if (checkOut <= checkIn) {
-    return copy.validations.checkOutAfterCheckIn;
-  }
-
-  return null;
 }
 
 function formatLocalizedDate(value: string, locale: Locale) {
@@ -118,42 +85,230 @@ function RequiredLabel({ children }: { children: string }) {
   );
 }
 
+function UnitPriceDisplay({
+  totalPrice,
+  nightlyPrice,
+  availabilityText,
+  title,
+}: {
+  totalPrice: string;
+  nightlyPrice: string;
+  availabilityText?: string;
+  title: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-sm-[2rem] text-[0.65rem] font-bold text-stone-400">{title}</p>
+      <p className="text-xl font-bold leading-none text-[#F0E7C9] sm:text-2xl">{totalPrice}</p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-3 text-xs text-stone-400">
+        <span>{nightlyPrice}</span>
+        {availabilityText ? <span>{availabilityText}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+function UnitSelectionRow({
+  unit,
+  remaining,
+  selectedQuantity,
+  nightCount,
+  locale,
+  copy,
+  onChange,
+}: {
+  unit: BookingUnit;
+  remaining: number | undefined;
+  selectedQuantity: number;
+  nightCount: number;
+  locale: Locale;
+  copy: (typeof siteCopy)[Locale]['booking'];
+  onChange: (quantity: number) => void;
+}) {
+  const stayLabel = `${nightCount} ${getNightWord(locale, nightCount)}`;
+  const availabilityText = remaining === undefined ? copy.availabilityLoading : copy.availabilityLabel(remaining);
+
+  return (
+    <div className="flex items-start gap-3 px-4 py-4">
+      <div className="min-w-0 flex-1">
+        <div className="space-y-1.5">
+          <p className="font-semibold text-white">{unit.title}</p>
+          <p className="text-sm leading-6 text-stone-300">{unit.summary}</p>
+          <p className="text-xs text-stone-500">{unit.dimensions}</p>
+        </div>
+
+        <UnitLayoutList
+          title={copy.layoutLabel}
+          sleepingLayout={unit.sleepingLayout}
+          features={unit.features}
+          compact
+          className="mt-3"
+        />
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs leading-5 text-stone-400">
+          <span className="text-stone-200">
+            <CapacityInline label={unit.capacityLabel} />
+          </span>
+          <span>{availabilityText}</span>
+        </div>
+
+        <div className="mt-3 max-w-sm">
+          <UnitPriceDisplay
+            title={copy.priceForStayLabel(stayLabel)}
+            totalPrice={formatCurrency(unit.pricePerNight * nightCount, locale)}
+            nightlyPrice={`${formatCurrency(unit.pricePerNight, locale)} ${copy.perNight}`}
+          />
+        </div>
+      </div>
+
+      <div className="w-24 shrink-0">
+        <label className="text-[0.65rem] uppercase tracking-[0.18em] text-stone-400">{copy.quantityLabel}</label>
+        <select
+          value={String(selectedQuantity)}
+          onChange={(event) => onChange(Number(event.target.value))}
+          disabled={remaining === undefined}
+          className="mt-2 h-10 w-full rounded-xl border border-white/10 bg-[#22282a] px-3 text-sm text-white outline-none transition focus:border-[#76BD23]/45"
+        >
+          {remaining === undefined ? (
+            <option value="0" className="bg-[#22282a] text-white">...</option>
+          ) : (
+            Array.from({ length: remaining + 1 }, (_, index) => index).map((value) => (
+              <option key={value} value={value} className="bg-[#22282a] text-white">{value}</option>
+            ))
+          )}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function SelectedUnitsSummary({
+  title,
+  lines,
+  totalAmount,
+  totalLabel,
+  emptyLabel,
+  locale,
+}: {
+  title: string;
+  lines: SelectedUnitLine[];
+  totalAmount: number;
+  totalLabel: string;
+  emptyLabel: string;
+  locale: Locale;
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-black/15 p-4 sm:p-5">
+      <p className="text-xs uppercase font-bold text-[#D6CAA0]">{title}</p>
+
+      {lines.length === 0 ? (
+        <p className="mt-4 text-sm leading-6 text-stone-300">{emptyLabel}</p>
+      ) : (
+        <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
+          <div className="divide-y divide-white/10 md:hidden">
+            {lines.map((line) => (
+              <div key={line.unit.id} className="space-y-3 px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-semibold text-white">{line.unit.title}</p>
+                  <p className="text-sm text-stone-300">{line.quantity}x</p>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-stone-400">{totalLabel}</span>
+                  <span className="font-medium text-[#F0E7C9]">{formatCurrency(line.lineTotal, locale)}</span>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center justify-between gap-3 bg-white/[0.03] px-4 py-3 font-semibold text-white">
+              <span>{totalLabel}</span>
+              <span>{formatCurrency(totalAmount, locale)}</span>
+            </div>
+          </div>
+
+          <table className="hidden w-full border-collapse text-left text-sm text-stone-200 md:table">
+            <tbody>
+              {lines.map((line) => (
+                <tr key={line.unit.id} className="border-b border-white/10 last:border-b-0">
+                  <td className="px-4 py-3 align-top text-white">{line.unit.title}</td>
+                  <td className="px-4 py-3 align-top text-stone-300">{line.quantity}x</td>
+                  <td className="px-4 py-3 text-right align-top font-medium text-[#F0E7C9]">
+                    {formatCurrency(line.lineTotal, locale)}
+                  </td>
+                </tr>
+              ))}
+              <tr className="bg-white/[0.03]">
+                <td className="px-4 py-3" />
+                <td className="px-4 py-3 font-semibold text-white">{totalLabel}</td>
+                <td className="px-4 py-3 text-right font-semibold text-white">{formatCurrency(totalAmount, locale)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function BookingPage() {
   const { locale, localizePath } = useI18n();
   const copy = siteCopy[locale].booking;
   const unitTypes = getUnitTypes(locale);
-  const defaultUnitId = unitTypes[0].id;
   const [searchParams] = useSearchParams();
   const requestedUnit = searchParams.get('unit');
-  const initialUnitId = unitTypes.some((unit) => unit.id === requestedUnit) ? requestedUnit! : defaultUnitId;
-  const stepActionRef = useRef<HTMLDivElement | null>(null);
+  const bookingSectionRef = useRef<HTMLElement | null>(null);
+  const initialUnitId = unitTypes.some((unit) => unit.id === requestedUnit) ? requestedUnit! : null;
 
   const [step, setStep] = useState(1);
-  const [selectedUnitId, setSelectedUnitId] = useState(initialUnitId);
+  const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>(() =>
+    Object.fromEntries(unitTypes.map((unit) => [unit.id, unit.id === initialUnitId ? 1 : 0])),
+  );
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formData, setFormData] = useState({
     guestName: '',
     guestEmail: '',
     guestPhone: '',
     checkIn: earliestCheckIn,
-    checkOut: earliestCheckOut,
+    checkOut: defaultCheckOut,
     notes: '',
   });
 
   const queryClient = useQueryClient();
   const availabilityQuery = useQuery(bookingAvailabilityQueryOptions());
 
-  const selectedUnit = useMemo(
-    () => unitTypes.find((unit) => unit.id === selectedUnitId) ?? unitTypes[0],
-    [selectedUnitId],
+  const availabilityByUnitId = useMemo(
+    () => new Map((availabilityQuery.data ?? []).map((item) => [item.unitType, item])),
+    [availabilityQuery.data],
   );
-
-  const selectedAvailability = availabilityQuery.data?.find((item) => item.unitType === selectedUnitId);
   const nightCount = getNightCount(formData.checkIn, formData.checkOut);
-  const totalStayPrice = selectedUnit.pricePerNight * nightCount;
-  const dateValidationMessage = getDateValidationMessage(locale, formData.checkIn, formData.checkOut);
   const stepLabels = copy.stepLabels;
   const nightLabel = `${nightCount} ${getNightWord(locale, nightCount)}`;
+  const unitPriceLabel = copy.priceForStayLabel(nightLabel);
+  const stayStartLabel = formatLocalizedDate(formData.checkIn, locale);
+  const stayDepartureLabel = formatLocalizedDate(defaultCheckOut, locale);
+
+  const selectedUnits = useMemo(
+    () =>
+      unitTypes.reduce<SelectedUnitLine[]>((lines, unit) => {
+        const remaining = availabilityByUnitId.get(unit.id)?.remaining;
+        const requestedQuantity = selectedQuantities[unit.id] ?? 0;
+        const quantity = remaining === undefined ? requestedQuantity : Math.min(requestedQuantity, remaining);
+
+        if (quantity <= 0) {
+          return lines;
+        }
+
+        lines.push({
+          unit,
+          quantity,
+          lineTotal: unit.pricePerNight * quantity * nightCount,
+        });
+
+        return lines;
+      }, []),
+    [availabilityByUnitId, nightCount, selectedQuantities, unitTypes],
+  );
+
+  const totalStayPrice = selectedUnits.reduce((sum, line) => sum + line.lineTotal, 0);
+  const selectedUnitsCount = selectedUnits.reduce((sum, line) => sum + line.quantity, 0);
 
   const mutation = useMutation({
     mutationFn: (payload: BookingRequestPayload) => submitBookingRequest(payload),
@@ -166,15 +321,14 @@ export function BookingPage() {
     formData.guestName.trim().length >= 2 &&
     formData.guestEmail.trim().length >= 5 &&
     formData.guestPhone.trim().length >= 8 &&
-    formData.checkIn.length > 0 &&
-    formData.checkOut.length > 0 &&
-    !dateValidationMessage &&
     nightCount > 0;
 
   const submitReservation = async () => {
     await mutation.mutateAsync({
-      unitType: selectedUnit.id,
-      quantity: 1,
+      lines: selectedUnits.map((line) => ({
+        unitType: line.unit.id,
+        quantity: line.quantity,
+      })),
       guestName: formData.guestName.trim(),
       guestEmail: formData.guestEmail.trim(),
       guestPhone: formData.guestPhone.trim(),
@@ -184,31 +338,19 @@ export function BookingPage() {
     });
   };
 
-  const handleSelectUnit = (unitId: string) => {
-    setSelectedUnitId(unitId);
+  const goToStep = (getNextStep: (current: number) => number) => {
+    setStep((current) => {
+      const nextStep = getNextStep(current);
 
-    window.requestAnimationFrame(() => {
-      stepActionRef.current?.scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth',
-      });
+      if (nextStep !== current) {
+        window.requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+
+      return nextStep;
     });
   };
-
-  useMountEffect(() => {
-    if (!requestedUnit) {
-      return;
-    }
-
-    const frameId = window.requestAnimationFrame(() => {
-      stepActionRef.current?.scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth',
-      });
-    });
-
-    return () => window.cancelAnimationFrame(frameId);
-  });
 
   return (
     <>
@@ -218,7 +360,7 @@ export function BookingPage() {
         canonicalPath={localizePath('/boeken')}
       />
 
-      <section className="rounded-[2rem] border border-white/10 bg-card/80 p-5 sm:p-6">
+      <section ref={bookingSectionRef} className="rounded-[2rem] border border-white/10 bg-card/80 p-5 sm:p-6">
         <article>
           <div className="flex flex-col gap-4 border-b border-white/8 pb-5">
             <div className="space-y-2">
@@ -258,12 +400,34 @@ export function BookingPage() {
           </div>
 
           {mutation.isSuccess ? (
-              <div className="mt-6 rounded-[1.5rem] border border-[#00953B]/35 bg-[#1C5733]/20 p-5">
+            <div className="mt-6 rounded-[1.5rem] border border-[#00953B]/35 bg-[#1C5733]/20 p-5">
               <p className="text-xs uppercase tracking-[0.28em] text-[#D6CAA0]">{copy.successEyebrow}</p>
               <h2 className="mt-3 text-2xl font-semibold text-white">{copy.successTitle}</h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-stone-200">
-                {copy.successMessage(mutation.data.confirmationCode, mutation.data.remaining)}
+                {copy.successMessage(mutation.data.confirmationCode)}
               </p>
+              <div className="mt-5 max-w-3xl">
+                <SelectedUnitsSummary
+                  title={copy.selectedUnitsTitle}
+                  lines={mutation.data.lines.map((line) => {
+                    const unit = unitTypes.find((item) => item.id === line.unitType) ?? unitTypes[0];
+
+                    return {
+                      unit,
+                      quantity: line.quantity,
+                      lineTotal: unit.pricePerNight * line.quantity * nightCount,
+                    };
+                  })}
+                  totalAmount={mutation.data.lines.reduce((sum, line) => {
+                    const unit = unitTypes.find((item) => item.id === line.unitType) ?? unitTypes[0];
+
+                    return sum + unit.pricePerNight * line.quantity * nightCount;
+                  }, 0)}
+                  totalLabel={copy.totalAmount}
+                  emptyLabel={copy.selectedUnitsEmpty}
+                  locale={locale}
+                />
+              </div>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button asChild className="rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]">
                   <Link to={localizePath('/')}>{copy.backHome}</Link>
@@ -291,68 +455,107 @@ export function BookingPage() {
                     </p>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/15 md:hidden">
                     {unitTypes.map((unit) => {
-                      const availability = availabilityQuery.data?.find((item) => item.unitType === unit.id);
+                      const availability = availabilityByUnitId.get(unit.id);
                       const remaining = availability?.remaining;
-                      const stockLimit = availability?.stockLimit;
-                      const isSelected = selectedUnitId === unit.id;
+                      const selectedQuantity = remaining === undefined
+                        ? selectedQuantities[unit.id] ?? 0
+                        : Math.min(selectedQuantities[unit.id] ?? 0, remaining);
 
                       return (
-                        <button
-                          key={unit.id}
-                          type="button"
-                          disabled={remaining === 0}
-                          onClick={() => handleSelectUnit(unit.id)}
-                          className={`w-full rounded-[1.5rem] border p-5 text-left transition ${
-                            isSelected
-                              ? 'border-[#76BD23]/55 bg-[#1C5733]/26 shadow-[0_0_0_1px_rgba(118,189,35,0.32),0_22px_44px_rgba(0,0,0,0.18)]'
-                              : 'border-white/10 bg-black/15 hover:border-white/20 hover:bg-white/[0.04]'
-                          } ${remaining === 0 ? 'cursor-not-allowed opacity-50' : ''}`}
-                        >
-                          <UnitImageCarousel images={unit.images} title={unit.title} />
-
-                          <div className="space-y-2">
-                            {isSelected ? (
-                              <div className="inline-flex items-center gap-2 rounded-full border border-[#76BD23]/30 bg-[#76BD23]/12 px-3 py-1 text-xs font-semibold text-[#D9F0B6]">
-                                <CheckCircle2 className="size-4" />
-                                {copy.selected}
-                              </div>
-                            ) : null}
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <h3 className="text-xl font-semibold text-white">{unit.title}</h3>
-                                <p className="mt-1 text-sm text-stone-300">
-                                  <CapacityInline label={unit.capacityLabel} />
-                                </p>
-                              </div>
-                              <div className="shrink-0 text-right">
-                                <p className="text-2xl font-bold leading-none text-[#F0E7C9]">{formatCurrency(unit.pricePerNight, locale)}</p>
-                                <p className="mt-1 text-xs text-stone-400">{copy.perNight}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 space-y-3 text-sm text-stone-300">
-                            <p className="leading-6">{unit.summary}</p>
-
-                            <div className="rounded-2xl border border-dashed border-[#76BD23]/35 bg-[#1C5733]/20 p-4">
-                              <p className="text-xs uppercase tracking-[0.2em] text-[#D6CAA0]">{copy.layoutLabel}</p>
-                              <p className="mt-2 leading-6 text-stone-200">{unit.sleepingLayout}</p>
-                            </div>
-
-                            <div className="flex items-center justify-between gap-3 pt-1 text-sm">
-                              <p className="text-stone-400">
-                                {remaining === undefined || stockLimit === undefined
-                                  ? copy.availabilityLoading
-                                  : copy.availabilityLabel(remaining)}
-                              </p>
-                              <span className="text-stone-500">{unit.dimensions}</span>
-                            </div>
-                          </div>
-                        </button>
+                        <div key={unit.id} className="border-t border-white/10 first:border-t-0">
+                          <UnitSelectionRow
+                            unit={unit}
+                            remaining={remaining}
+                            selectedQuantity={selectedQuantity}
+                            nightCount={nightCount}
+                            locale={locale}
+                            copy={copy}
+                            onChange={(quantity) =>
+                              setSelectedQuantities((current) => ({
+                                ...current,
+                                [unit.id]: quantity,
+                              }))
+                            }
+                          />
+                        </div>
                       );
                     })}
+                  </div>
+
+                  <div className="hidden overflow-x-auto rounded-[1.5rem] border border-white/10 bg-black/15 md:block">
+                    <table className="min-w-full border-collapse text-left text-sm text-stone-200">
+                      <thead className="bg-white/[0.03] text-xs text-swhite">
+                        <tr>
+                          <th className="px-4 py-3 font-semibold">{copy.unitTypeLabel}</th>
+                          <th className="px-4 py-3 font-semibold">{copy.personsLabel}</th>
+                          <th className="px-4 py-3 font-semibold">{unitPriceLabel}</th>
+                          <th className="px-4 py-3 font-semibold">{copy.quantityLabel}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {unitTypes.map((unit) => {
+                          const availability = availabilityByUnitId.get(unit.id);
+                          const remaining = availability?.remaining;
+                          const selectedQuantity = remaining === undefined
+                            ? selectedQuantities[unit.id] ?? 0
+                            : Math.min(selectedQuantities[unit.id] ?? 0, remaining);
+                          const availabilityText = remaining === undefined ? copy.availabilityLoading : copy.availabilityLabel(remaining);
+
+                          return (
+                            <tr key={unit.id} className="border-t border-white/10 align-top first:border-t-0">
+                              <td className="px-4 py-4">
+                                <div className="space-y-1.5">
+                                  <p className="font-semibold text-white">{unit.title}</p>
+                                  <p className="text-sm leading-6 text-stone-300">{unit.summary}</p>
+                                  <p className="text-xs text-stone-500">{unit.dimensions}</p>
+                                </div>
+                                <UnitLayoutList
+                                  title={copy.layoutLabel}
+                                  sleepingLayout={unit.sleepingLayout}
+                                  features={unit.features}
+                                  compact
+                                  className="mt-3"
+                                />
+                              </td>
+                              <td className="px-4 py-4 text-stone-300">
+                                <CapacityInline label={unit.capacityLabel} />
+                              </td>
+                              <td className="px-4 py-4">
+                                <UnitPriceDisplay
+                                  title={unitPriceLabel}
+                                  totalPrice={formatCurrency(unit.pricePerNight * nightCount, locale)}
+                                  nightlyPrice={`${formatCurrency(unit.pricePerNight, locale)} ${copy.perNight}`}
+                                  availabilityText={availabilityText}
+                                />
+                              </td>
+                              <td className="px-4 py-4">
+                                <select
+                                  value={String(selectedQuantity)}
+                                  onChange={(event) =>
+                                    setSelectedQuantities((current) => ({
+                                      ...current,
+                                      [unit.id]: Number(event.target.value),
+                                    }))
+                                  }
+                                  disabled={remaining === undefined}
+                                  className="h-10 min-w-24 rounded-xl border border-white/10 bg-[#22282a] px-3 text-sm text-white outline-none transition focus:border-[#76BD23]/45"
+                                >
+                                  {remaining === undefined ? (
+                                    <option value="0" className="bg-[#22282a] text-white">...</option>
+                                  ) : (
+                                    Array.from({ length: remaining + 1 }, (_, index) => index).map((value) => (
+                                      <option key={value} value={value} className="bg-[#22282a] text-white">{value}</option>
+                                    ))
+                                  )}
+                                </select>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               ) : null}
@@ -404,62 +607,17 @@ export function BookingPage() {
                         placeholder={copy.placeholders.guestPhone}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="checkIn" className="text-stone-100"><RequiredLabel>{copy.labels.checkIn}</RequiredLabel></Label>
-                      <Input
-                        id="checkIn"
-                        type="date"
-                        value={formData.checkIn}
-                        min={earliestCheckIn}
-                        max={latestCheckIn}
-                        onChange={(event) =>
-                          setFormData((current) => {
-                            const nextCheckIn = event.target.value;
-                            const minimumCheckOut = addDays(nextCheckIn, 1);
-
-                            return {
-                              ...current,
-                              checkIn: nextCheckIn,
-                              checkOut:
-                                current.checkOut < minimumCheckOut
-                                  ? minimumCheckOut
-                                  : current.checkOut > latestCheckOut
-                                    ? latestCheckOut
-                                    : current.checkOut,
-                            };
-                          })
-                        }
-                        className="h-11 rounded-xl border-white/10 bg-black/20 text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="checkOut" className="text-stone-100"><RequiredLabel>{copy.labels.checkOut}</RequiredLabel></Label>
-                      <Input
-                        id="checkOut"
-                        type="date"
-                        value={formData.checkOut}
-                        min={formData.checkIn ? addDays(formData.checkIn, 1) : earliestCheckOut}
-                        max={latestCheckOut}
-                        onChange={(event) =>
-                          setFormData((current) => ({ ...current, checkOut: event.target.value }))
-                        }
-                        className="h-11 rounded-xl border-white/10 bg-black/20 text-white"
-                      />
-                    </div>
-                    {dateValidationMessage ? (
-                      <div className="rounded-[1.25rem] border border-red-400/20 bg-red-400/10 p-4 md:col-span-2">
-                        <p className="text-sm font-medium text-red-100">{dateValidationMessage}</p>
-                      </div>
-                    ) : null}
                     <div className="rounded-[1.5rem] border border-[#76BD23]/20 bg-[#1C5733]/18 p-4 md:col-span-2">
-                      <p className="text-sm font-semibold text-[#F0E7C9]">{copy.stayDurationLabel}</p>
+                      <p className="text-sm font-semibold text-[#F0E7C9]">
+                        {locale === 'en' ? 'Period' : 'Verblijfsperiode'}
+                      </p>
                       <p className="mt-2 text-lg font-semibold text-white">
                         {nightLabel}
                       </p>
                       <p className="mt-2 text-sm leading-6 text-stone-300">
                         {copy.stayDurationDescription(
-                          formatLocalizedDate(formData.checkIn, locale),
-                          formatLocalizedDate(formData.checkOut, locale),
+                          stayStartLabel,
+                          stayDepartureLabel,
                           nightLabel,
                         )}
                       </p>
@@ -491,32 +649,21 @@ export function BookingPage() {
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="rounded-[1.5rem] border border-white/10 bg-black/15 p-5">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-[#F0E7C9]">{copy.chosenUnit}</p>
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="text-xl font-semibold text-white">{selectedUnit.title}</h3>
-                            <p className="mt-1 text-sm text-stone-300">
-                              <CapacityInline label={selectedUnit.capacityLabel} />
-                            </p>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <p className="text-2xl font-bold leading-none text-[#F0E7C9]">
-                              {formatCurrency(selectedUnit.pricePerNight, locale)}
-                            </p>
-                            <p className="mt-1 text-xs text-stone-400">{copy.perNight}</p>
-                          </div>
-                        </div>
-                      </div>
+                      <SelectedUnitsSummary
+                        title={copy.selectedUnitsTitle}
+                        lines={selectedUnits}
+                        totalAmount={totalStayPrice}
+                        totalLabel={copy.totalAmount}
+                        emptyLabel={copy.selectedUnitsEmpty}
+                        locale={locale}
+                      />
 
                       <div className="mt-4 space-y-3 text-sm text-stone-300">
-                        <p className="leading-6">{selectedUnit.summary}</p>
-
                         <div className="flex items-start gap-3 rounded-2xl border border-white/8 bg-black/20 p-4">
                           <CalendarDays className="mt-0.5 size-5 shrink-0 text-[#D6CAA0]" />
                           <div>
                             <p className="font-medium text-white">
-                              {formatLocalizedDate(formData.checkIn, locale)} {locale === 'en' ? 'to' : 'tot'} {formatLocalizedDate(formData.checkOut, locale)}
+                              {stayStartLabel} {locale === 'en' ? 'to' : 'tot en met'} {stayDepartureLabel}
                             </p>
                             <p className="mt-1 text-sm text-stone-300">
                               {nightLabel}
@@ -533,11 +680,6 @@ export function BookingPage() {
                               </p>
                             </div>
                           </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-3 pt-1 text-sm">
-                          <p className="text-stone-400">{selectedUnit.dimensions}</p>
-                          <span className="text-stone-300">{selectedUnit.sleepingLayout}</span>
                         </div>
                       </div>
                     </div>
@@ -587,25 +729,16 @@ export function BookingPage() {
                 </div>
               ) : null}
 
-              <div ref={stepActionRef} className="space-y-4 border-t border-white/8 pt-5">
+              <div className="space-y-4 border-t border-white/8 pt-5">
                 {step === 1 ? (
-                  <div className="rounded-[1.5rem] border border-[#76BD23]/20 bg-[#1C5733]/18 p-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-[#D6CAA0]">{copy.chosenUnit}</p>
-                    <div className="mt-3 flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">{selectedUnit.title}</h3>
-                        <p className="mt-1 text-sm text-stone-300">
-                          <CapacityInline label={selectedUnit.capacityLabel} />
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-2xl font-bold leading-none text-[#F0E7C9]">
-                          {formatCurrency(selectedUnit.pricePerNight, locale)}
-                        </p>
-                        <p className="mt-1 text-xs text-stone-400">{copy.perNight}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <SelectedUnitsSummary
+                    title={copy.selectedUnitsTitle}
+                    lines={selectedUnits}
+                    totalAmount={totalStayPrice}
+                    totalLabel={copy.totalAmount}
+                    emptyLabel={copy.selectedUnitsEmpty}
+                    locale={locale}
+                  />
                 ) : null}
 
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
@@ -613,7 +746,7 @@ export function BookingPage() {
                   type="button"
                   variant="outline"
                   className="rounded-full border-[#00953B]/25 bg-[#1C5733]/16 text-white hover:bg-[#1C5733]/22"
-                  onClick={() => setStep((current) => Math.max(1, current - 1))}
+                  onClick={() => goToStep((current) => Math.max(1, current - 1))}
                   disabled={step === 1 || mutation.isPending}
                 >
                   <ArrowLeft />
@@ -624,10 +757,10 @@ export function BookingPage() {
                   <Button
                     type="button"
                     className="rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]"
-                    onClick={() => setStep((current) => current + 1)}
+                    onClick={() => goToStep((current) => current + 1)}
                     disabled={
                       mutation.isPending ||
-                      (step === 1 && selectedAvailability?.remaining === 0) ||
+                      (step === 1 && (availabilityQuery.data === undefined || selectedUnitsCount === 0)) ||
                       (step === 2 && !isDetailsStepValid)
                     }
                   >
@@ -639,7 +772,7 @@ export function BookingPage() {
                     type="button"
                     className="rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]"
                     onClick={submitReservation}
-                    disabled={mutation.isPending || !acceptedTerms || !isDetailsStepValid}
+                    disabled={mutation.isPending || !acceptedTerms || !isDetailsStepValid || selectedUnitsCount === 0}
                   >
                     {mutation.isPending ? <LoaderCircle className="animate-spin" /> : null}
                     {copy.sendRequest}

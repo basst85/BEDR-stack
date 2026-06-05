@@ -49,7 +49,7 @@ const copyByLocale: Record<Locale, Copy> = {
       backToHomepage: 'Terug naar de homepage',
     },
     footer: {
-      summary: 'Warme woonunits op loopafstand van het EK Veldrijden in Zeddam.',
+      summary: 'Warme woonunits op slechts 6 minuten rijden van het EK Veldrijden in Zeddam.',
     },
   },
   en: {
@@ -66,7 +66,7 @@ const copyByLocale: Record<Locale, Copy> = {
       backToHomepage: 'Back to homepage',
     },
     footer: {
-      summary: 'Warm accommodation units within walking distance of the 2026 European Cyclo-cross Championships in Zeddam.',
+      summary: 'Warm accommodation units just 6 minutes by car from the 2026 European Cyclo-cross Championships in Zeddam.',
     },
   },
 };

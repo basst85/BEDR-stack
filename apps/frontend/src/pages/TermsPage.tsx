@@ -32,7 +32,11 @@ export function TermsPage() {
           {copy.sections.map((section) => (
             <article key={section.title} className="rounded-[1.75rem] border border-white/10 bg-black/15 p-5">
               <h2 className="text-xl font-semibold text-white">{section.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-stone-300">{section.body}</p>
+              <div className="mt-3 space-y-4 text-sm leading-7 text-stone-300">
+                {section.body.split('\n\n').map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
             </article>
           ))}
         </div>

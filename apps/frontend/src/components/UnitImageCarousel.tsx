@@ -46,21 +46,22 @@ export function UnitImageCarousel({ images, title }: UnitImageCarouselProps) {
   const hasMultipleImages = images.length > 1;
 
   return (
-    <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/20">
-        <div className="overflow-hidden" ref={emblaRef}>
+    <div className="min-w-0 space-y-3">
+      <div className="relative min-w-0 overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/20">
+        <div className="min-w-0 overflow-hidden" ref={emblaRef}>
           <div className="flex">
             {images.map((image) => (
               <div key={`${title}-${image.src}-${image.alt}`} className="min-w-0 shrink-0 grow-0 basis-full">
-                <div className="relative aspect-[16/10]">
-                  <Image
-                    src={image.src}
-                    alt={image.alt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover"
-                  />
-                </div>
+                <div className="relative aspect-[16/10] min-w-0">
+                <Image
+                  src={image.src}
+                  alt={image.alt}
+                  fill
+                  quality={82}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
               </div>
             ))}
           </div>
@@ -72,7 +73,7 @@ export function UnitImageCarousel({ images, title }: UnitImageCarouselProps) {
               type="button"
               aria-label={`Previous photo for ${title}`}
               onClick={() => emblaApi?.scrollPrev()}
-              className="absolute left-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white transition hover:bg-black/65"
+              className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white transition hover:bg-black/65"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -80,7 +81,7 @@ export function UnitImageCarousel({ images, title }: UnitImageCarouselProps) {
               type="button"
               aria-label={`Next photo for ${title}`}
               onClick={() => emblaApi?.scrollNext()}
-              className="absolute right-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white transition hover:bg-black/65"
+              className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-white transition hover:bg-black/65"
             >
               <ChevronRight className="size-4" />
             </button>

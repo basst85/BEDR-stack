@@ -6,6 +6,7 @@ import { Image } from '@/components/Image';
 import { SeoHead } from '@/components/SeoHead';
 import { UnitImageCarousel } from '@/components/UnitImageCarousel';
 import { Button } from '@/components/ui/button';
+import { UnitLayoutList } from '../components/UnitLayoutList';
 import { bookingAvailabilityQueryOptions } from '@/lib/api';
 import { formatCurrency, resolvePublicAssetPath, useI18n } from '@/lib/i18n';
 import { siteCopy } from '@/lib/site-copy';
@@ -38,10 +39,68 @@ export function HomePage() {
   const conceptPoints = getConceptPoints(locale);
   const faqItems = getFaqItems(locale);
   const locationHighlights = getLocationHighlights(locale);
+  const locationHighlightIcons = [MapPinned, ShowerHead, ArrowRight] as const;
   const unitTypes = getUnitTypes(locale);
   const availabilityQuery = useQuery(bookingAvailabilityQueryOptions());
   const availability = availabilityQuery.data ?? [];
   const heroImageSrc = resolvePublicAssetPath('impressie.jpg');
+  const locationBlockTitle = locale === 'en' ? 'The Location' : 'De Locatie';
+  const addressLabel = locale === 'en' ? 'Address' : 'Adres';
+  const mapButtonLabel = locale === 'en' ? 'Google Maps' : 'Google Maps';
+  const address = 'Zeddamseweg 16, Kilder';
+  const googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=Zeddamseweg+16,+Kilder';
+  const openStreetMapEmbedUrl = 'https://www.openstreetmap.org/export/embed.html?bbox=6.231651%2C51.918968%2C6.251651%2C51.938968&layer=mapnik&marker=51.928968%2C6.241651';
+  const configuredSiteUrl = import.meta.env.VITE_SITE_URL?.replace(/\/$/, '');
+  const browserOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
+  const siteUrl = configuredSiteUrl ?? browserOrigin;
+  const pagePath = localizePath('/');
+  const pageUrl = siteUrl ? `${siteUrl}${pagePath}` : undefined;
+  const logoImageSrc = resolvePublicAssetPath('logo-crossvillage.jpg');
+  const logoImageUrl = siteUrl ? new URL(logoImageSrc, siteUrl).toString() : undefined;
+  const homeJsonLd: Array<Record<string, unknown>> = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: copy.seoTitle,
+      description: copy.seoDescription,
+      url: pageUrl,
+      inLanguage: locale === 'en' ? 'en-GB' : 'nl-NL',
+      ...(logoImageUrl ? { image: logoImageUrl } : {}),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Campground',
+      name: 'CrossVillage Zeddam',
+      description: copy.seoDescription,
+      url: pageUrl,
+      ...(logoImageUrl ? { image: logoImageUrl } : {}),
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: address,
+        addressLocality: 'Kilder',
+        addressRegion: 'Gelderland',
+        addressCountry: 'NL',
+      },
+      amenityFeature: conceptPoints.map((point) => ({
+        '@type': 'LocationFeatureSpecification',
+        name: point.title,
+        value: true,
+        description: point.description,
+      })),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqItems.map((item) => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.answer,
+        },
+      })),
+    },
+  ];
 
   return (
     <>
@@ -49,6 +108,7 @@ export function HomePage() {
         title={copy.seoTitle}
         description={copy.seoDescription}
         canonicalPath={localizePath('/')}
+        jsonLd={homeJsonLd}
       />
 
       <div className="space-y-5">
@@ -128,15 +188,15 @@ export function HomePage() {
             </p>
           </div>
 
-          <div className="mt-5 grid gap-3">
+          <div className="mt-5 grid gap-3 xl:grid-cols-2">
             {unitTypes.map((unit) => {
               const unitAvailability = availability.find((item) => item.unitType === unit.id);
 
               return (
-                <article key={unit.id} className="rounded-[1.5rem] border border-white/10 bg-black/15 p-5">
+                <article key={unit.id} className="flex h-full flex-col rounded-[1.5rem] border border-white/10 bg-black/15 p-5">
                   <UnitImageCarousel images={unit.images} title={unit.title} />
 
-                  <div className="space-y-2">
+                  <div className="mt-4 space-y-2">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h3 className="text-xl font-semibold text-white">{unit.title}</h3>
@@ -151,21 +211,26 @@ export function HomePage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-3 text-sm text-stone-300">
+                  <div className="mt-4 flex flex-1 flex-col gap-3 text-sm text-stone-300">
                     <p className="leading-6">{unit.summary}</p>
-                    <div className="rounded-2xl border border-dashed border-[#76BD23]/35 bg-[#1C5733]/20 p-4">
-                      <p className="text-xs uppercase tracking-[0.2em] text-[#D6CAA0]">{copy.layoutLabel}</p>
-                      <p className="mt-2 leading-6 text-stone-200">{unit.sleepingLayout}</p>
-                    </div>
-                    <div className="flex items-center justify-between gap-3 pt-1">
-                      <p className="text-sm text-stone-400">
-                        {unitAvailability
-                          ? copy.availabilityLabel(unitAvailability.remaining)
-                          : copy.availabilityLoading}
-                      </p>
-                      <Button asChild className="rounded-full bg-[#76BD23] px-4 text-[#10311c] hover:bg-[#6eb220]">
-                        <Link to={localizePath(`/boeken?unit=${unit.id}#unit-selector`)}>{copy.choose}</Link>
-                      </Button>
+                    <div className="mt-auto space-y-3">
+                      <div className="rounded-2xl border border-dashed border-[#76BD23]/35 bg-[#1C5733]/20 p-4">
+                        <UnitLayoutList
+                          title={copy.layoutLabel}
+                          sleepingLayout={unit.sleepingLayout}
+                          features={unit.features}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <p className="text-sm text-stone-400">
+                          {unitAvailability
+                            ? copy.availabilityLabel(unitAvailability.remaining)
+                            : copy.availabilityLoading}
+                        </p>
+                        <Button asChild className="rounded-full bg-[#76BD23] px-4 text-[#10311c] hover:bg-[#6eb220]">
+                          <Link to={localizePath(`/boeken?unit=${unit.id}`)}>{copy.choose}</Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -184,18 +249,53 @@ export function HomePage() {
             </p>
           </article>
 
+          <article className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/15">
+            <div className="grid gap-0 lg:grid-cols-[0.95fr_1.25fr]">
+              <div className="flex flex-col justify-between gap-4 p-5 sm:p-6">
+                <div>
+                  <p className="text-xs text-[#D6CAA0]">{locationBlockTitle}</p>
+                  <p className="mt-4 text-sm font-semibold text-white">{addressLabel}</p>
+                  <p className="mt-2 text-sm leading-7 text-stone-300">{address}</p>
+                </div>
+
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex w-fit items-center rounded-full border border-[#76BD23]/35 bg-[#1C5733]/20 px-4 py-2 text-sm font-semibold text-[#D9F0B6] transition hover:border-[#76BD23]/60 hover:bg-[#1C5733]/30 hover:text-white"
+                >
+                  {mapButtonLabel}
+                </a>
+              </div>
+
+              <div className="min-h-[280px] border-t border-white/10 lg:border-l lg:border-t-0">
+                <iframe
+                  title={`${locationBlockTitle} map`}
+                  src={openStreetMapEmbedUrl}
+                  className="h-full min-h-[280px] w-full"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </div>
+          </article>
+
           <div className="space-y-3">
-            {locationHighlights.map((item) => (
+            {locationHighlights.map((item, index) => {
+              const Icon = locationHighlightIcons[index] ?? MapPinned;
+
+              return (
               <article key={item.title} className="rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
                 <div className="flex items-start gap-3">
-                  <MapPinned className="mt-1 size-5 text-[#00953B]" />
+                  <Icon className="mt-1 size-5 text-[#00953B]" />
                   <div>
                     <p className="text-base font-semibold text-white">{item.title}</p>
                     <p className="mt-2 text-sm leading-6 text-stone-300">{item.description}</p>
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         </section>
 

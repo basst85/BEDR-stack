@@ -31,7 +31,29 @@ const configuredCorsOrigins = getEnv('CORS_ORIGIN', '')
   .split(',')
   .map((origin) => normalizeOrigin(origin.trim()))
   .filter(Boolean);
-const configuredImageAllowedHosts = parseCsvEnv('IMAGE_ALLOWED_HOSTS');
+const configuredSiteUrl = normalizeOrigin(getEnv('VITE_SITE_URL', '').trim());
+
+const collectAllowedImageHosts = () => {
+  const allowedHosts = new Set(parseCsvEnv('IMAGE_ALLOWED_HOSTS'));
+
+  const candidateUrls = [configuredSiteUrl, ...configuredCorsOrigins];
+
+  for (const candidateUrl of candidateUrls) {
+    if (!candidateUrl) {
+      continue;
+    }
+
+    try {
+      allowedHosts.add(new URL(candidateUrl).hostname);
+    } catch {
+      continue;
+    }
+  }
+
+  return Array.from(allowedHosts);
+};
+
+const configuredImageAllowedHosts = collectAllowedImageHosts();
 
 const parseNonNegativeIntegerEnv = (name: string, fallback: number) => {
   const rawValue = (process.env[name] ?? '').trim();
@@ -58,10 +80,19 @@ const bookingStockEnvByUnitType: Record<UnitTypeValue, string> = {
   cabine: 'BOOKING_STOCK_CABINE',
 };
 
+const bookingDefaultStockByUnitType: Record<UnitTypeValue, number> = {
+  '420': 5,
+  '660': 5,
+  '730': 5,
+  '733': 5,
+  '900': 5,
+  cabine: 8,
+};
+
 const bookingStockByUnitType = Object.fromEntries(
   unitTypeValues.map((unitType) => [
     unitType,
-    parseNonNegativeIntegerEnv(bookingStockEnvByUnitType[unitType], 5),
+    parseNonNegativeIntegerEnv(bookingStockEnvByUnitType[unitType], bookingDefaultStockByUnitType[unitType]),
   ]),
 ) as Record<UnitTypeValue, number>;
 

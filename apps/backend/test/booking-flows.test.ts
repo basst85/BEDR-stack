@@ -4,13 +4,16 @@ import { app } from '@backend/server';
 
 type BookingAvailabilityItem = {
   unitType: string;
-  stockLimit: number;
   remaining: number;
 };
 
 type BookingConfirmation = {
   confirmationCode: string;
-  remaining: number;
+  lines: Array<{
+    unitType: string;
+    quantity: number;
+    remaining: number;
+  }>;
 };
 
 type ErrorResponse = {
@@ -34,10 +37,8 @@ describe('booking routes', () => {
 
     expect(response.status).toBe(200);
     expect(payload).toHaveLength(6);
-    expect(payload).toContainEqual(expect.objectContaining({ unitType: '420', stockLimit: 2, remaining: 2 }));
-    expect(payload).toContainEqual(
-      expect.objectContaining({ unitType: 'cabine', stockLimit: 6, remaining: 6 }),
-    );
+    expect(payload).toContainEqual(expect.objectContaining({ unitType: '420', remaining: 2 }));
+    expect(payload).toContainEqual(expect.objectContaining({ unitType: 'cabine', remaining: 8 }));
   });
 
   test('blocks reservations once the configured stock is exhausted', async () => {
@@ -45,8 +46,10 @@ describe('booking routes', () => {
       createJsonRequest(
         '/api/bookings',
         {
-          unitType: '420',
-          quantity: 2,
+          lines: [
+            { unitType: '420', quantity: 1 },
+            { unitType: '660', quantity: 2 },
+          ],
           guestName: 'Ada Lovelace',
           guestEmail: 'ada@example.com',
           guestPhone: '0612345678',
@@ -62,14 +65,14 @@ describe('booking routes', () => {
 
     expect(acceptedResponse.status).toBe(200);
     expect(acceptedPayload.confirmationCode).toMatch(/^VV-/);
-    expect(acceptedPayload.remaining).toBe(0);
+    expect(acceptedPayload.lines).toContainEqual(expect.objectContaining({ unitType: '420', quantity: 1, remaining: 1 }));
+    expect(acceptedPayload.lines).toContainEqual(expect.objectContaining({ unitType: '660', quantity: 2, remaining: 2 }));
 
     const rejectedResponse = await app.handle(
       createJsonRequest(
         '/api/bookings',
         {
-          unitType: '420',
-          quantity: 1,
+          lines: [{ unitType: '420', quantity: 2 }],
           guestName: 'Grace Hopper',
           guestEmail: 'grace@example.com',
           guestPhone: '0687654321',
@@ -84,6 +87,6 @@ describe('booking routes', () => {
     const rejectedPayload = (await rejectedResponse.json()) as ErrorResponse;
 
     expect(rejectedResponse.status).toBe(409);
-    expect(rejectedPayload).toEqual({ message: 'This unit type is fully booked.' });
+    expect(rejectedPayload).toEqual({ message: 'Only 1 unit(s) remain for this type.' });
   });
 });

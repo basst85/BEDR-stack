@@ -47,64 +47,69 @@ export class BookingService {
       return {
         unitType,
         title: unitCatalog[unitType].title,
-        stockLimit,
-        reserved,
         remaining: Math.max(stockLimit - reserved, 0),
       };
     });
   }
 
   async create(payload: BookingRequestPayload) {
-    if (!validUnitTypes.has(payload.unitType as UnitTypeValue)) {
-      throw new BookingInventoryError('Unknown unit type selected.');
+    const groupedLines = new Map<UnitTypeValue, number>();
+
+    for (const line of payload.lines) {
+      if (!validUnitTypes.has(line.unitType as UnitTypeValue)) {
+        throw new BookingInventoryError('Unknown unit type selected.');
+      }
+
+      const unitType = line.unitType as UnitTypeValue;
+      groupedLines.set(unitType, (groupedLines.get(unitType) ?? 0) + line.quantity);
     }
 
-    const unitType = payload.unitType as UnitTypeValue;
-    const reserved = await this.getReservedCount(unitType);
-  const stockLimit = config.bookingStockByUnitType[unitType];
-    const remaining = stockLimit - reserved;
+    const availability = await this.getAvailability();
+    const availabilityByUnitType = new Map(availability.map((item) => [item.unitType as UnitTypeValue, item]));
 
-    if (payload.quantity > remaining) {
-      throw new BookingInventoryError(
-        remaining > 0
-          ? `Only ${remaining} unit(s) remain for this type.`
-          : 'This unit type is fully booked.',
-      );
+    for (const [unitType, quantity] of groupedLines) {
+      const lineAvailability = availabilityByUnitType.get(unitType);
+
+      if (!lineAvailability) {
+        throw new BookingInventoryError('Unknown unit type selected.');
+      }
+
+      if (quantity > lineAvailability.remaining) {
+        throw new BookingInventoryError(
+          lineAvailability.remaining > 0
+            ? `Only ${lineAvailability.remaining} unit(s) remain for this type.`
+            : 'This unit type is fully booked.',
+        );
+      }
     }
 
-    const id = crypto.randomUUID();
+    const requestGroupId = crypto.randomUUID();
 
-    await db.insert(bookingRequestsTable).values({
-      id,
-      unitType,
-      quantity: payload.quantity,
-      guestName: payload.guestName,
-      guestEmail: payload.guestEmail,
-      guestPhone: payload.guestPhone,
-      checkIn: payload.checkIn,
-      checkOut: payload.checkOut,
-      notes: payload.notes,
-      status: 'pending',
-    });
+    await db.insert(bookingRequestsTable).values(
+      Array.from(groupedLines.entries()).map(([unitType, quantity]) => ({
+        id: crypto.randomUUID(),
+        requestGroupId,
+        unitType,
+        quantity,
+        guestName: payload.guestName,
+        guestEmail: payload.guestEmail,
+        guestPhone: payload.guestPhone,
+        checkIn: payload.checkIn,
+        checkOut: payload.checkOut,
+        notes: payload.notes,
+        status: 'pending',
+      })),
+    );
 
     return {
-      id,
-      confirmationCode: `VV-${id.slice(0, 8).toUpperCase()}`,
-      unitType,
-      quantity: payload.quantity,
+      id: requestGroupId,
+      confirmationCode: `VV-${requestGroupId.slice(0, 8).toUpperCase()}`,
+      lines: Array.from(groupedLines.entries()).map(([unitType, quantity]) => ({
+        unitType,
+        quantity,
+        remaining: (availabilityByUnitType.get(unitType)?.remaining ?? 0) - quantity,
+      })),
       status: 'pending' as const,
-      remaining: remaining - payload.quantity,
     };
-  }
-
-  private async getReservedCount(unitType: UnitTypeValue) {
-    const result = await db
-      .select({
-        reserved: sql<number>`coalesce(sum(${bookingRequestsTable.quantity}), 0)`,
-      })
-      .from(bookingRequestsTable)
-      .where(eq(bookingRequestsTable.unitType, unitType));
-
-    return Number(result[0]?.reserved ?? 0);
   }
 }

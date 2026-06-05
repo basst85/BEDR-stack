@@ -43,14 +43,16 @@ export type SessionResponse = {
 export type BookingAvailabilityItem = {
   unitType: string;
   title: string;
-  stockLimit: number;
-  reserved: number;
   remaining: number;
 };
 
-export type BookingRequestPayload = {
+export type BookingRequestLinePayload = {
   unitType: string;
   quantity: number;
+};
+
+export type BookingRequestPayload = {
+  lines: BookingRequestLinePayload[];
   guestName: string;
   guestEmail: string;
   guestPhone: string;
@@ -62,10 +64,12 @@ export type BookingRequestPayload = {
 export type BookingConfirmation = {
   id: string;
   confirmationCode: string;
-  unitType: string;
-  quantity: number;
+  lines: Array<{
+    unitType: string;
+    quantity: number;
+    remaining: number;
+  }>;
   status: 'pending';
-  remaining: number;
 };
 
 type ApiErrorResponse = {

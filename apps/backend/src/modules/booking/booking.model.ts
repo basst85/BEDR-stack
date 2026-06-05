@@ -12,6 +12,7 @@ export const unitTypeValues = [
 
 export const bookingRequestsTable = sqliteTable('booking_requests', {
   id: text('id').primaryKey(),
+  requestGroupId: text('request_group_id').notNull(),
   unitType: text('unit_type').notNull(),
   quantity: integer('quantity').notNull(),
   guestName: text('guest_name').notNull(),
@@ -26,9 +27,13 @@ export const bookingRequestsTable = sqliteTable('booking_requests', {
     .$defaultFn(() => new Date()),
 });
 
-export const bookingRequestPayload = t.Object({
+export const bookingRequestLinePayload = t.Object({
   unitType: t.String({ minLength: 1 }),
   quantity: t.Integer({ minimum: 1, maximum: 999 }),
+});
+
+export const bookingRequestPayload = t.Object({
+  lines: t.Array(bookingRequestLinePayload, { minItems: 1, maxItems: unitTypeValues.length }),
   guestName: t.String({ minLength: 2 }),
   guestEmail: t.String({ format: 'email' }),
   guestPhone: t.String({ minLength: 8 }),
@@ -40,18 +45,20 @@ export const bookingRequestPayload = t.Object({
 export const bookingAvailabilityDto = t.Object({
   unitType: t.String(),
   title: t.String(),
-  stockLimit: t.Integer(),
-  reserved: t.Integer(),
   remaining: t.Integer(),
 });
 
 export const bookingConfirmationDto = t.Object({
   id: t.String({ format: 'uuid' }),
   confirmationCode: t.String(),
-  unitType: t.String(),
-  quantity: t.Integer(),
+  lines: t.Array(
+    t.Object({
+      unitType: t.String(),
+      quantity: t.Integer(),
+      remaining: t.Integer(),
+    }),
+  ),
   status: t.Literal('pending'),
-  remaining: t.Integer(),
 });
 
 export const bookingErrorDto = t.Object({

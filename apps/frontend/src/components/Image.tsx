@@ -45,8 +45,26 @@ function buildOptimizedImageUrl({
   return url.toString();
 }
 
-function isOptimizableRemoteImage(src: string) {
-  return /^https?:\/\//i.test(src);
+function resolveOptimizableSrc(src: string) {
+  if (/^https?:\/\//i.test(src)) {
+    return src;
+  }
+
+  if (!src.startsWith('/')) {
+    return null;
+  }
+
+  const siteUrl = import.meta.env.VITE_SITE_URL?.replace(/\/$/, '');
+
+  if (siteUrl) {
+    return new URL(src, `${siteUrl}/`).toString();
+  }
+
+  if (typeof window !== 'undefined') {
+    return new URL(src, window.location.origin).toString();
+  }
+
+  return null;
 }
 
 export function Image({
@@ -64,10 +82,11 @@ export function Image({
   sizes,
   ...props
 }: ImageProps) {
-  const resolvedSrc = unoptimized || !isOptimizableRemoteImage(src)
+  const optimizableSrc = unoptimized ? null : resolveOptimizableSrc(src);
+  const resolvedSrc = !optimizableSrc
     ? src
     : buildOptimizedImageUrl({
-        src,
+        src: optimizableSrc,
         width,
         height,
         quality,
