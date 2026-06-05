@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { useI18n, type Locale } from '@/lib/i18n';
@@ -120,6 +120,7 @@ export function App() {
   const navItems = [
     { href: localizePath('/#units'), label: copy.nav.units },
     { href: localizePath('/#location'), label: copy.nav.location },
+    { href: localizePath('/over-ons'), label: copy.nav.about },
     { href: localizePath('/#faq'), label: copy.nav.faq },
   ];
 
@@ -155,12 +156,6 @@ export function App() {
                     {item.label}
                   </a>
                 ))}
-                <NavLink
-                  to={localizePath('/voorwaarden')}
-                  className="rounded-full border border-border/60 px-3 py-1.5 text-sm text-stone-200 transition hover:border-[#76BD23]/70 hover:bg-[#1C5733]/18 hover:text-white"
-                >
-                  {copy.nav.terms}
-                </NavLink>
               </nav>
 
               <Button asChild size="sm" className="rounded-full bg-[#76BD23] px-4 text-[#10311c] hover:bg-[#6eb220]">
@@ -194,13 +189,6 @@ export function App() {
                   {item.label}
                 </a>
               ))}
-              <NavLink
-                to={localizePath('/voorwaarden')}
-                onClick={closeMobileMenu}
-                className="rounded-2xl border border-border/60 bg-black/10 px-4 py-3 text-sm text-stone-100 transition hover:border-[#76BD23]/70 hover:bg-[#1C5733]/18 hover:text-white"
-              >
-                {copy.nav.terms}
-              </NavLink>
             </nav>
           ) : null}
 

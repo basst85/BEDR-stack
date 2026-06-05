@@ -11,6 +11,7 @@ import '@fontsource/open-sans/latin-800.css';
 
 import { LocaleProvider, LocaleRedirect, withAppBasePath } from '@/lib/i18n';
 import { App } from './pages/App';
+import { AboutPage } from './pages/AboutPage';
 import { BookingPage } from './pages/BookingPage';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
     element: <LocaleRedirect />,
   },
   {
+    path: withAppBasePath('/over-ons'),
+    element: <LocaleRedirect />,
+  },
+  {
     element: <LocalizedApp />,
     children: [
       {
@@ -56,6 +61,10 @@ const router = createBrowserRouter([
       {
         path: withAppBasePath('/:locale/voorwaarden'),
         element: <TermsPage />,
+      },
+      {
+        path: withAppBasePath('/:locale/over-ons'),
+        element: <AboutPage />,
       },
       {
         path: withAppBasePath('/:locale/*'),

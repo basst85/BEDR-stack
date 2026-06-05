@@ -25,6 +25,7 @@ type Copy = {
     units: string;
     location: string;
     faq: string;
+    about: string;
     terms: string;
     bookNow: string;
     backToHomepage: string;
@@ -44,6 +45,7 @@ const copyByLocale: Record<Locale, Copy> = {
       units: 'Units',
       location: 'Locatie',
       faq: 'FAQ',
+      about: 'Over ons',
       terms: 'Voorwaarden',
       bookNow: 'Boek nu',
       backToHomepage: 'Terug naar de homepage',
@@ -61,6 +63,7 @@ const copyByLocale: Record<Locale, Copy> = {
       units: 'Units',
       location: 'Location',
       faq: 'FAQ',
+      about: 'About us',
       terms: 'Terms',
       bookNow: 'Book now',
       backToHomepage: 'Back to homepage',

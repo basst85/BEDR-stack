@@ -31,11 +31,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '2 persoons unit met stapelbed',
       capacityLabel: '2 personen',
       pricePerNight: 150,
-      dimensions: 'Type unit 420',
+      dimensions: 'Type unit 420 • 10 m2',
       sleepingLayout: '1 slaapkamer met stapelbed',
       summary:
-        'Compact, comfortabel en van alle gemakken voorzien. Deze 2-persoons unit biedt alles wat je nodig hebt voor een ontspannen verblijf tijdens het EK veldrijden. Na een dag langs het parcours kom je tot rust in een warme, volledig geisoleerde unit met eigen sanitair en keuken.',
-      features: ['Douche, toilet en wastafel', 'Keuken', 'Volledig geisoleerd'],
+        'Compact en comfortabel. Deze 2-persoons unit biedt het nodige voor een ontspannen verblijf tijdens het EK veldrijden. Na een dag langs het parcours kom je tot rust in een warme, volledig geisoleerde unit met eigen sanitair en basiskeuken zonder oven, vriezer en een opbergkastje minder dan de overige woonunits.',
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
       images: unit420ImageSources.map((src, index) => ({ src, alt: `2 persoons unit met stapelbed foto ${index + 1}` })),
     },
     {
@@ -44,11 +44,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '2 persoons unit met 2 losse bedden',
       capacityLabel: '2 personen',
       pricePerNight: 170,
-      dimensions: 'Type unit 660',
+      dimensions: 'Type unit 660 • 16 m2',
       sleepingLayout: '1 slaapkamer met twee losse bedden',
       summary:
         'Compact, comfortabel en van alle gemakken voorzien. Deze 2-persoons unit biedt alles wat je nodig hebt voor een ontspannen verblijf tijdens het EK veldrijden. Na een dag langs het parcours kom je tot rust in een warme, volledig geisoleerde unit met eigen sanitair en keuken.',
-      features: ['Douche, toilet en wastafel', 'Keuken', 'Volledig geisoleerd'],
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
       images: unit660ImageSources.map((src, index) => ({ src, alt: `2 persoons unit met 2 losse bedden foto ${index + 1}` })),
     },
     {
@@ -57,11 +57,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '4 persoons unit met twee stapelbedden',
       capacityLabel: '4 personen',
       pricePerNight: 300,
-      dimensions: 'Type unit 730',
+      dimensions: 'Type unit 730 • 18 m2',
       sleepingLayout: '2 slaapkamers met een stapelbed',
       summary:
         'Perfect voor vrienden, familie of een klein gezelschap dat het EK veldrijden van dichtbij wil beleven. Met twee slaapkamers, een eigen keuken en prive sanitair biedt deze volledig geisoleerde unit alles voor een comfortabel verblijf.',
-      features: ['Douche, toilet en wastafel', 'Keuken', 'Volledig geisoleerd'],
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
       images: unit730ImageSources.map((src, index) => ({ src, alt: `4 persoons unit met twee stapelbedden foto ${index + 1}` })),
     },
     {
@@ -70,11 +70,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '4 persoons unit met stapelbed en twee persoonsbed',
       capacityLabel: '4 personen',
       pricePerNight: 320,
-      dimensions: 'Type unit 733',
+      dimensions: 'Type unit 733 • 18 m2',
       sleepingLayout: '2 slaapkamers met tweepersoonsbed en stapelbed',
       summary:
         'Deze comfortabele 4-persoons unit is ideaal voor gezinnen, stellen of vrienden die wat extra ruimte waarderen. Met een aparte slaapkamer met tweepersoonsbed en een slaapkamer met stapelbed, plus een eigen keuken en sanitair, geniet je van een zorgeloos verblijf tijdens het EK veldrijden.',
-      features: ['Douche, toilet en wastafel', 'Keuken', 'Volledig geisoleerd'],
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
       images: unit733ImageSources.map((src, index) => ({ src, alt: `4 persoons unit met stapelbed en tweepersoonsbed foto ${index + 1}` })),
     },
     {
@@ -83,11 +83,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: 'Drie tot vijf-persoons VIP woonunit',
       capacityLabel: '3 - 5 personen',
       pricePerNight: 400,
-      dimensions: 'Type unit 900',
+      dimensions: 'Type unit 900 • 22 m2',
       sleepingLayout: '2 slaapkamers geschikt voor 5 personen',
       summary:
         'Voor wie net wat meer comfort zoekt. Deze volledig geisoleerde VIP woonunit biedt plaats aan maximaal vijf personen en combineert ruimte, privacy en gemak. De ideale uitvalsbasis om overdag het EK te beleven en s avonds comfortabel te ontspannen.',
-      features: ['Douche, toilet en wastafel', 'Keuken', 'Volledig geisoleerd'],
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
       images: [{ src: unitPreviewImageSrc, alt: 'Drie tot vijf-persoons VIP woonunit' }],
     },
     {
@@ -96,7 +96,7 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '2 persoons compartiment in 8 persoons slaapwagen',
       capacityLabel: '2 personen',
       pricePerNight: 90,
-      dimensions: 'Type unit cabine',
+      dimensions: 'Compartiment • 5 m2',
       sleepingLayout: '4 slaapkamers met een stapelbed',
       summary:
         'Een compacte en budgetvriendelijke keuze voor twee personen. Dit 2-persoons compartiment bevindt zich in een volledig geisoleerde 8-persoons slaapwagen en biedt een comfortabele plek om te overnachten na een dag vol veldritactie.',
@@ -115,7 +115,7 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       sleepingLayout: '1 bedroom with bunk bed',
       summary:
         'Compact, comfortable and fully equipped. This 2-person unit offers everything you need for a relaxed stay during the European Cyclo-cross Championships. After a day at the course, you can unwind in a warm, fully insulated unit with private sanitary facilities and a kitchen.',
-      features: ['Shower, toilet and washbasin', 'Kitchen', 'Fully insulated'],
+      features: ['Shower, toilet and washbasin', 'Simple kitchen', 'Fully insulated'],
       images: unit420ImageSources.map((src, index) => ({ src, alt: `2 person unit with bunk bed photo ${index + 1}` })),
     },
     {
@@ -124,11 +124,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '2 person unit with twin beds',
       capacityLabel: '2 people',
       pricePerNight: 170,
-      dimensions: 'Unit type 660',
+      dimensions: 'Unit type 660 • 16 m2',
       sleepingLayout: '1 bedroom with two single beds',
       summary:
         'Compact, comfortable and fully equipped. This 2-person unit offers everything you need for a relaxed stay during the European Cyclo-cross Championships. After a day at the course, you can unwind in a warm, fully insulated unit with private sanitary facilities and a kitchen.',
-      features: ['Shower, toilet and washbasin', 'Kitchen', 'Fully insulated'],
+      features: ['Shower, toilet and washbasin', 'Simple kitchen', 'Fully insulated'],
       images: unit660ImageSources.map((src, index) => ({ src, alt: `2 person unit with twin beds photo ${index + 1}` })),
     },
     {
@@ -137,11 +137,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '4 person unit with two bunk beds',
       capacityLabel: '4 people',
       pricePerNight: 300,
-      dimensions: 'Unit type 730',
+      dimensions: 'Unit type 730 • 18 m2',
       sleepingLayout: '2 bedrooms with one bunk bed each',
       summary:
         'Perfect for friends, family or a small group that wants to experience the European Cyclo-cross Championships up close. With two bedrooms, a private kitchen and private sanitary facilities, this fully insulated unit offers everything you need for a comfortable stay.',
-      features: ['Shower, toilet and washbasin', 'Kitchen', 'Fully insulated'],
+      features: ['Shower, toilet and washbasin', 'Simple kitchen', 'Fully insulated'],
       images: unit730ImageSources.map((src, index) => ({ src, alt: `4 person unit with two bunk beds photo ${index + 1}` })),
     },
     {
@@ -150,11 +150,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '4 person unit with bunk bed and double bed',
       capacityLabel: '4 people',
       pricePerNight: 320,
-      dimensions: 'Unit type 733',
+      dimensions: 'Unit type 733 • 18 m2',
       sleepingLayout: '2 bedrooms with a double bed and a bunk bed',
       summary:
         'This comfortable 4-person unit is ideal for families, couples or friends who appreciate a bit of extra space. With a separate bedroom with a double bed and a bedroom with a bunk bed, plus a private kitchen and sanitary facilities, you can enjoy a carefree stay during the European Cyclo-cross Championships.',
-      features: ['Shower, toilet and washbasin', 'Kitchen', 'Fully insulated'],
+      features: ['Shower, toilet and washbasin', 'Simple kitchen', 'Fully insulated'],
       images: unit733ImageSources.map((src, index) => ({ src, alt: `4 person unit with bunk bed and double bed photo ${index + 1}` })),
     },
     {
@@ -163,11 +163,11 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: 'Three to five-person VIP accommodation unit',
       capacityLabel: '3 - 5 people',
       pricePerNight: 400,
-      dimensions: 'Unit type 900',
+      dimensions: 'Unit type 900 • 22 m2',
       sleepingLayout: '2 bedrooms suitable for 5 people',
       summary:
         'For those looking for just a little more comfort. This fully insulated VIP accommodation unit sleeps up to five people and combines space, privacy and convenience. The ideal base to enjoy the championships during the day and relax in comfort in the evening.',
-      features: ['Shower, toilet and washbasin', 'Kitchen', 'Fully insulated'],
+      features: ['Shower, toilet and washbasin', 'Simple kitchen', 'Fully insulated'],
       images: [{ src: unitPreviewImageSrc, alt: 'Three to five-person VIP accommodation unit' }],
     },
     {
@@ -176,7 +176,7 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       title: '2 person compartment in 8 person sleeper wagon',
       capacityLabel: '2 people',
       pricePerNight: 90,
-      dimensions: 'Unit type cabine',
+      dimensions: 'Compartment • 5 m2',
       sleepingLayout: '4 bedrooms with one bunk bed',
       summary:
         'A compact and budget-friendly option for two people. This 2-person compartment is located inside a fully insulated 8-person sleeper wagon and offers a comfortable place to stay after a day full of cyclo-cross action.',
@@ -241,7 +241,7 @@ const faqItemsByLocale = {
     {
       question: 'Wat is Cross Village Zeddam en wanneer is het geopend?',
       answer:
-        'Cross Village Zeddam is een tijdelijke pick-up camping met comfortabele woonunits, speciaal opgezet voor de bezoekers van het EK Veldrijden in Zeddam. De camping is geopend van donderdag 5 november tot en met maandag 9 november. Zo mis je geen seconde van het wielerspektakel!',
+        'Cross Village Zeddam is een tijdelijke pop-up camping met comfortabele woonunits, speciaal opgezet voor de bezoekers van het EK Veldrijden in Zeddam. De camping is geopend van donderdag 5 november tot en met maandag 9 november. Zo mis je geen seconde van het wielerspektakel!',
     },
     {
       question: 'Waar ligt de camping en hoe kom ik bij het EK-parcours?',
@@ -266,7 +266,7 @@ const faqItemsByLocale = {
     {
       question: 'Hoe werkt het in- en uitchecken?',
       answer:
-        'Je bent op donderdag 5 november welkom vanaf 10.00 uur om in te checken en je unit te betrekken. Kom je op vrijdag of zaterdag aan? Geen probleem, de incheckbalie is flexibel geopend. Op de maandag na het EK dien je uiterlijk om 11.00 uur uit te checken, zodat ons team de units weer kan ontmantelen.',
+        'Je bent vanaf donderdag 5 november welkom om vanaf 10.00 uur in te checken en je unit te betrekken. Kom je op vrijdag of zaterdag aan? Geen probleem, de incheckbalie is flexibel geopend. Op de maandag na het EK dien je uiterlijk om 11.00 uur uit te checken, zodat ons team de units weer kan ontmantelen.',
     },
     {
       question: 'Waar kan ik mijn auto parkeren?',
@@ -276,7 +276,7 @@ const faqItemsByLocale = {
     {
       question: 'Moet ik borg betalen voor de woonunit?',
       answer:
-        'Nee, wij rekenen geen borg vooraf. Wel gaan we ervan uit dat iedereen als een goed huisvader met de units en de inventaris omgaat. Mocht er onverhoopt toch iets beschadigd raken, dan zijn we genoodzaakt de herstelkosten achteraf aan de hoofdboeker te factureren.',
+        'Ja, wij vragen een borg van € 100,- per persoon. Als de woonunit na afloop van het verblijf in goede staat en netjes wordt achtergelaten, ontvang je dit bedrag weer volledig terug.',
     },
     {
       question: 'Zijn huisdieren toegestaan en mag ik bezoek ontvangen?',
@@ -288,12 +288,27 @@ const faqItemsByLocale = {
       answer:
         'Gezelligheid en een biertje horen natuurlijk bij het veldrijden! Om ervoor te zorgen dat iedereen aan zijn broodnodige rust toekomt, geldt er tussen 23:00 uur en 07:00 uur absolute nachtrust op het terrein. Vanwege de brandveiligheid is open vuur, inclusief vuurkorven en (wegwerp)barbecues, streng verboden op het gehele terrein.',
     },
+    {
+      question: 'Is er bestek en kookgerei aanwezig in de woonunit?',
+      answer:
+        'In elke woonunit met keuken ligt een bestekset voor je klaar. Er zijn standaard geen pannen en overig kookgerei aanwezig. Heb je toch een pannenset of kookgerei nodig? Neem dan gerust contact met ons op, dan regelen we dit voor je!',
+    },
+    {
+      question: 'Waarom betaal ik niet per nacht, maar voor het hele weekend?',
+      answer:
+        'Onze camping is een unieke pop-up locatie. Dit betekent dat we alles speciaal voor dit weekend opbouwen en inrichten om er een geweldige ervaring van te maken. Omdat het onderdak exclusief gedurende dit specifieke weekend beschikbaar is, boek en betaal je altijd voor het volledige weekend.',
+    },
+    {
+      question: 'Is er WiFi aanwezig in de woonunit?',
+      answer:
+        'Nee, er is geen WiFi aanwezig. Gelukkig is het mobiele bereik (4G/5G) op ons terrein uitstekend.',
+    },
   ],
   en: [
     {
       question: 'What is Cross Village Zeddam and when is it open?',
       answer:
-        'Cross Village Zeddam is a temporary pick-up campsite with comfortable accommodation units, specially created for visitors to the European Cyclo-cross Championships in Zeddam. The campsite is open from Thursday 5 November through Monday 9 November, so you will not miss a second of the cycling spectacle!',
+        'Cross Village Zeddam is a temporary pop-up campsite with comfortable accommodation units, specially created for visitors to the European Cyclo-cross Championships in Zeddam. The campsite is open from Thursday 5 November through Monday 9 November, so you will not miss a second of the cycling spectacle!',
     },
     {
       question: 'Where is the campsite located and how do I get to the championship course?',
@@ -339,6 +354,21 @@ const faqItemsByLocale = {
       question: 'What are the rules around quiet hours and socialising?',
       answer:
         'A good atmosphere and a beer are naturally part of cyclo-cross. To make sure everyone gets the rest they need, strict quiet hours apply on the site between 23:00 and 07:00. Because of fire safety rules, open flames, including fire baskets and disposable barbecues, are strictly forbidden anywhere on the site.',
+    },
+    {
+      question: 'Is cutlery and cooking equipment available in the accommodation unit?',
+      answer:
+        'In every accommodation unit with a kitchen, a cutlery set is provided for you. Pots and other cooking utensils are not included as standard. Do you still need a pan set or cooking equipment? Feel free to contact us and we will arrange it for you.',
+    },
+    {
+      question: 'Why do I not pay per night, but for the whole weekend?',
+      answer:
+        'Our campsite is a unique pop-up location. This means we specially build and prepare everything for this weekend to create a great experience. Because the accommodation is available exclusively during this specific weekend, you always book and pay for the full weekend.',
+    },
+    {
+      question: 'Is WiFi available in the accommodation unit?',
+      answer:
+        'No, there is no WiFi available. Fortunately, mobile coverage (4G/5G) on our site is excellent.',
     },
   ],
 } as const;

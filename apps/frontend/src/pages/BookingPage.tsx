@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, CalendarDays, Check, LoaderCircle, Mail, Phone, Users } from 'lucide-react';
+import { getCountries, getCountryCallingCode, type CountryCode } from 'libphonenumber-js';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import {
@@ -20,7 +21,15 @@ import { UnitLayoutList } from '../components/UnitLayoutList';
 
 const earliestCheckIn = '2026-11-05';
 const latestCheckIn = '2026-11-09';
+const earliestCheckOut = '2026-11-06';
 const defaultCheckOut = '2026-11-10';
+const latestCheckOut = '2026-11-10';
+
+const fallbackCountryNames: Partial<Record<CountryCode, string>> = {
+  AC: 'Ascension Island',
+  TA: 'Tristan da Cunha',
+  XK: 'Kosovo',
+};
 
 type BookingUnit = ReturnType<typeof getUnitTypes>[number];
 type SelectedUnitLine = {
@@ -33,6 +42,28 @@ function parseIsoDate(value: string) {
   const [year, month, day] = value.split('-').map(Number);
 
   return new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
+}
+
+function isValidIsoDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const parsedDate = parseIsoDate(value);
+
+  return !Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === value;
+}
+
+function compareIsoDates(left: string, right: string) {
+  return parseIsoDate(left).getTime() - parseIsoDate(right).getTime();
+}
+
+function addDaysToIsoDate(value: string, days: number) {
+  const date = parseIsoDate(value);
+
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return date.toISOString().slice(0, 10);
 }
 
 function getNightCount(checkIn: string, checkOut: string) {
@@ -60,6 +91,33 @@ function getNightWord(locale: Locale, count: number) {
   }
 
   return count === 1 ? 'nacht' : 'nachten';
+}
+
+function formatInternationalPhoneNumber(countryCode: string, phoneNumber: string) {
+  const normalizedLocalNumber = phoneNumber.replace(/[^\d]/g, '').replace(/^0+/, '');
+
+  if (!normalizedLocalNumber) {
+    return '';
+  }
+
+  return `${countryCode} ${normalizedLocalNumber}`;
+}
+
+function getPhoneCountryOptions(locale: Locale) {
+  const displayNames = new Intl.DisplayNames([locale === 'en' ? 'en' : 'nl'], { type: 'region' });
+
+  return getCountries()
+    .map((country) => {
+      const callingCode = `+${getCountryCallingCode(country)}`;
+      const countryName = displayNames.of(country) ?? fallbackCountryNames[country] ?? country;
+
+      return {
+        country,
+        callingCode,
+        label: `${countryName} (${callingCode})`,
+      };
+    })
+    .sort((left, right) => left.label.localeCompare(right.label));
 }
 
 function CapacityInline({ label }: { label: string }) {
@@ -133,12 +191,11 @@ function UnitSelectionRow({
       <div className="min-w-0 flex-1">
         <div className="space-y-1.5">
           <p className="font-semibold text-white">{unit.title}</p>
-          <p className="text-sm leading-6 text-stone-300">{unit.summary}</p>
-          <p className="text-xs text-stone-500">{unit.dimensions}</p>
         </div>
 
         <UnitLayoutList
           title={copy.layoutLabel}
+          dimensions={unit.dimensions}
           sleepingLayout={unit.sleepingLayout}
           features={unit.features}
           compact
@@ -167,7 +224,7 @@ function UnitSelectionRow({
           value={String(selectedQuantity)}
           onChange={(event) => onChange(Number(event.target.value))}
           disabled={remaining === undefined}
-          className="mt-2 h-10 w-full rounded-xl border border-white/10 bg-[#22282a] px-3 text-sm text-white outline-none transition focus:border-[#76BD23]/45"
+          className="mt-2 h-10 w-full rounded-xl border border-white/10 bg-[#22282a] px-3 text-base text-white outline-none transition focus:border-[#76BD23]/45 sm:text-sm"
         >
           {remaining === undefined ? (
             <option value="0" className="bg-[#22282a] text-white">...</option>
@@ -209,7 +266,9 @@ function SelectedUnitsSummary({
             {lines.map((line) => (
               <div key={line.unit.id} className="space-y-3 px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="font-semibold text-white">{line.unit.title}</p>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <p className="font-semibold text-white">{line.unit.title}</p>
+                  </div>
                   <p className="text-sm text-stone-300">{line.quantity}x</p>
                 </div>
                 <div className="flex items-center justify-between gap-3 text-sm">
@@ -228,7 +287,11 @@ function SelectedUnitsSummary({
             <tbody>
               {lines.map((line) => (
                 <tr key={line.unit.id} className="border-b border-white/10 last:border-b-0">
-                  <td className="px-4 py-3 align-top text-white">{line.unit.title}</td>
+                  <td className="px-4 py-3 align-top text-white">
+                    <div className="space-y-1.5">
+                      <p>{line.unit.title}</p>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 align-top text-stone-300">{line.quantity}x</td>
                   <td className="px-4 py-3 text-right align-top font-medium text-[#F0E7C9]">
                     {formatCurrency(line.lineTotal, locale)}
@@ -262,6 +325,7 @@ export function BookingPage() {
     Object.fromEntries(unitTypes.map((unit) => [unit.id, unit.id === initialUnitId ? 1 : 0])),
   );
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [guestPhoneCountryCode, setGuestPhoneCountryCode] = useState<CountryCode>('NL');
   const [formData, setFormData] = useState({
     guestName: '',
     guestEmail: '',
@@ -278,12 +342,47 @@ export function BookingPage() {
     () => new Map((availabilityQuery.data ?? []).map((item) => [item.unitType, item])),
     [availabilityQuery.data],
   );
+  const phoneCountryOptions = useMemo(() => getPhoneCountryOptions(locale), [locale]);
+  const pricedNightCount = getNightCount(earliestCheckIn, defaultCheckOut);
   const nightCount = getNightCount(formData.checkIn, formData.checkOut);
+  const formattedGuestPhone = formatInternationalPhoneNumber(`+${getCountryCallingCode(guestPhoneCountryCode)}`, formData.guestPhone);
   const stepLabels = copy.stepLabels;
   const nightLabel = `${nightCount} ${getNightWord(locale, nightCount)}`;
   const unitPriceLabel = copy.priceForStayLabel(nightLabel);
   const stayStartLabel = formatLocalizedDate(formData.checkIn, locale);
-  const stayDepartureLabel = formatLocalizedDate(defaultCheckOut, locale);
+  const stayDepartureLabel = formatLocalizedDate(formData.checkOut, locale);
+  const dateErrors = useMemo(() => {
+    const errors: { checkIn: string | null; checkOut: string | null } = {
+      checkIn: null,
+      checkOut: null,
+    };
+
+    if (!isValidIsoDate(formData.checkIn)) {
+      errors.checkIn = copy.validations.invalidDates;
+    }
+
+    if (!isValidIsoDate(formData.checkOut)) {
+      errors.checkOut = copy.validations.invalidDates;
+    }
+
+    if (errors.checkIn || errors.checkOut) {
+      return errors;
+    }
+
+    if (compareIsoDates(formData.checkIn, earliestCheckIn) < 0 || compareIsoDates(formData.checkIn, latestCheckIn) > 0) {
+      errors.checkIn = copy.validations.checkInRange;
+    }
+
+    if (compareIsoDates(formData.checkOut, earliestCheckOut) < 0 || compareIsoDates(formData.checkOut, latestCheckOut) > 0) {
+      errors.checkOut = copy.validations.checkOutRange;
+    }
+
+    if (!errors.checkIn && !errors.checkOut && compareIsoDates(formData.checkOut, formData.checkIn) <= 0) {
+      errors.checkOut = copy.validations.checkOutAfterCheckIn;
+    }
+
+    return errors;
+  }, [copy.validations, formData.checkIn, formData.checkOut]);
 
   const selectedUnits = useMemo(
     () =>
@@ -299,12 +398,12 @@ export function BookingPage() {
         lines.push({
           unit,
           quantity,
-          lineTotal: unit.pricePerNight * quantity * nightCount,
+          lineTotal: unit.pricePerNight * quantity * pricedNightCount,
         });
 
         return lines;
       }, []),
-    [availabilityByUnitId, nightCount, selectedQuantities, unitTypes],
+    [availabilityByUnitId, pricedNightCount, selectedQuantities, unitTypes],
   );
 
   const totalStayPrice = selectedUnits.reduce((sum, line) => sum + line.lineTotal, 0);
@@ -320,7 +419,9 @@ export function BookingPage() {
   const isDetailsStepValid =
     formData.guestName.trim().length >= 2 &&
     formData.guestEmail.trim().length >= 5 &&
-    formData.guestPhone.trim().length >= 8 &&
+    formData.guestPhone.replace(/[^\d]/g, '').length >= 6 &&
+    !dateErrors.checkIn &&
+    !dateErrors.checkOut &&
     nightCount > 0;
 
   const submitReservation = async () => {
@@ -331,7 +432,7 @@ export function BookingPage() {
       })),
       guestName: formData.guestName.trim(),
       guestEmail: formData.guestEmail.trim(),
-      guestPhone: formData.guestPhone.trim(),
+      guestPhone: formattedGuestPhone,
       checkIn: formData.checkIn,
       checkOut: formData.checkOut,
       notes: formData.notes.trim(),
@@ -415,13 +516,13 @@ export function BookingPage() {
                     return {
                       unit,
                       quantity: line.quantity,
-                      lineTotal: unit.pricePerNight * line.quantity * nightCount,
+                      lineTotal: unit.pricePerNight * line.quantity * pricedNightCount,
                     };
                   })}
                   totalAmount={mutation.data.lines.reduce((sum, line) => {
                     const unit = unitTypes.find((item) => item.id === line.unitType) ?? unitTypes[0];
 
-                    return sum + unit.pricePerNight * line.quantity * nightCount;
+                    return sum + unit.pricePerNight * line.quantity * pricedNightCount;
                   }, 0)}
                   totalLabel={copy.totalAmount}
                   emptyLabel={copy.selectedUnitsEmpty}
@@ -461,7 +562,7 @@ export function BookingPage() {
                             unit={unit}
                             remaining={remaining}
                             selectedQuantity={selectedQuantity}
-                            nightCount={nightCount}
+                            nightCount={pricedNightCount}
                             locale={locale}
                             copy={copy}
                             onChange={(quantity) =>
@@ -500,11 +601,10 @@ export function BookingPage() {
                               <td className="px-4 py-4">
                                 <div className="space-y-1.5">
                                   <p className="font-semibold text-white">{unit.title}</p>
-                                  <p className="text-sm leading-6 text-stone-300">{unit.summary}</p>
-                                  <p className="text-xs text-stone-500">{unit.dimensions}</p>
                                 </div>
                                 <UnitLayoutList
                                   title={copy.layoutLabel}
+                                  dimensions={unit.dimensions}
                                   sleepingLayout={unit.sleepingLayout}
                                   features={unit.features}
                                   compact
@@ -517,7 +617,7 @@ export function BookingPage() {
                               <td className="px-4 py-4">
                                 <UnitPriceDisplay
                                   title={unitPriceLabel}
-                                  totalPrice={formatCurrency(unit.pricePerNight * nightCount, locale)}
+                                  totalPrice={formatCurrency(unit.pricePerNight * pricedNightCount, locale)}
                                   nightlyPrice={`${formatCurrency(unit.pricePerNight, locale)} ${copy.perNight}`}
                                   availabilityText={availabilityText}
                                 />
@@ -532,7 +632,7 @@ export function BookingPage() {
                                     }))
                                   }
                                   disabled={remaining === undefined}
-                                  className="h-10 min-w-24 rounded-xl border border-white/10 bg-[#22282a] px-3 text-sm text-white outline-none transition focus:border-[#76BD23]/45"
+                                  className="h-10 min-w-24 rounded-xl border border-white/10 bg-[#22282a] px-3 text-base text-white outline-none transition focus:border-[#76BD23]/45 sm:text-sm"
                                 >
                                   {remaining === undefined ? (
                                     <option value="0" className="bg-[#22282a] text-white">...</option>
@@ -589,15 +689,67 @@ export function BookingPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="guestPhone" className="text-stone-100"><RequiredLabel>{copy.labels.guestPhone}</RequiredLabel></Label>
+                      <div className="flex gap-2">
+                        <select
+                          aria-label={locale === 'en' ? 'Country code' : 'Landcode'}
+                          value={guestPhoneCountryCode}
+                          onChange={(event) => setGuestPhoneCountryCode(event.target.value as CountryCode)}
+                          className="h-11 w-36 shrink-0 rounded-xl border border-white/10 bg-black/20 px-2.5 text-base text-white outline-none transition focus:border-[#76BD23]/45 sm:text-sm"
+                        >
+                          {phoneCountryOptions.map((option) => (
+                            <option key={option.country} value={option.country} className="bg-[#22282a] text-white">
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <Input
+                          id="guestPhone"
+                          inputMode="tel"
+                          autoComplete="tel-national"
+                          value={formData.guestPhone}
+                          onChange={(event) =>
+                            setFormData((current) => ({ ...current, guestPhone: event.target.value }))
+                          }
+                          className="h-11 rounded-xl border-white/10 bg-black/20 text-white"
+                          placeholder={copy.placeholders.guestPhone}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="checkIn" className="text-stone-100"><RequiredLabel>{copy.labels.checkIn}</RequiredLabel></Label>
                       <Input
-                        id="guestPhone"
-                        value={formData.guestPhone}
+                        id="checkIn"
+                        type="date"
+                        value={formData.checkIn}
+                        min={earliestCheckIn}
+                        max={latestCheckIn}
                         onChange={(event) =>
-                          setFormData((current) => ({ ...current, guestPhone: event.target.value }))
+                          setFormData((current) => ({ ...current, checkIn: event.target.value }))
                         }
+                        aria-invalid={dateErrors.checkIn ? 'true' : 'false'}
                         className="h-11 rounded-xl border-white/10 bg-black/20 text-white"
-                        placeholder={copy.placeholders.guestPhone}
                       />
+                      {dateErrors.checkIn ? <p className="text-sm text-red-300">{dateErrors.checkIn}</p> : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="checkOut" className="text-stone-100"><RequiredLabel>{copy.labels.checkOut}</RequiredLabel></Label>
+                      <Input
+                        id="checkOut"
+                        type="date"
+                        value={formData.checkOut}
+                        min={isValidIsoDate(formData.checkIn)
+                          ? addDaysToIsoDate(formData.checkIn, 1) < earliestCheckOut
+                            ? earliestCheckOut
+                            : addDaysToIsoDate(formData.checkIn, 1)
+                          : earliestCheckOut}
+                        max={latestCheckOut}
+                        onChange={(event) =>
+                          setFormData((current) => ({ ...current, checkOut: event.target.value }))
+                        }
+                        aria-invalid={dateErrors.checkOut ? 'true' : 'false'}
+                        className="h-11 rounded-xl border-white/10 bg-black/20 text-white"
+                      />
+                      {dateErrors.checkOut ? <p className="text-sm text-red-300">{dateErrors.checkOut}</p> : null}
                     </div>
                     <div className="rounded-[1.5rem] border border-[#76BD23]/20 bg-[#1C5733]/18 p-4 md:col-span-2">
                       <p className="text-sm font-semibold text-[#F0E7C9]">
@@ -622,7 +774,7 @@ export function BookingPage() {
                         onChange={(event) =>
                           setFormData((current) => ({ ...current, notes: event.target.value }))
                         }
-                        className="border-input placeholder:text-muted-foreground focus-visible:ring-ring min-h-32 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition-colors focus-visible:ring-2"
+                        className="border-input placeholder:text-muted-foreground focus-visible:ring-ring min-h-32 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-base text-white outline-none transition-colors focus-visible:ring-2 sm:text-sm"
                         placeholder={copy.placeholders.notes}
                       />
                     </div>
@@ -694,7 +846,7 @@ export function BookingPage() {
                           <Phone className="mt-0.5 size-5 shrink-0 text-[#D6CAA0]" />
                           <div>
                             <p className="font-medium text-white">{copy.phone}</p>
-                            <p className="mt-1 text-stone-300">{formData.guestPhone}</p>
+                            <p className="mt-1 text-stone-300">{formattedGuestPhone}</p>
                           </div>
                         </div>
                       </div>

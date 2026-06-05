@@ -1,9 +1,10 @@
-import { BedSingle, Check, CookingPot, ShieldCheck, ShowerHead } from 'lucide-react';
+import { BedSingle, Check, CookingPot, Ruler, ShieldCheck, ShowerHead } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 type UnitLayoutListProps = {
   title?: string;
+  dimensions?: string;
   sleepingLayout: string;
   features: string[];
   compact?: boolean;
@@ -12,6 +13,10 @@ type UnitLayoutListProps = {
 
 function getLayoutIcon(text: string) {
   const normalizedText = text.toLowerCase();
+
+  if (normalizedText.includes('m2') || normalizedText.includes('unit type') || normalizedText.includes('type unit') || normalizedText.includes('compartment') || normalizedText.includes('compartiment')) {
+    return Ruler;
+  }
 
   if (
     normalizedText.includes('slaap') ||
@@ -41,8 +46,8 @@ function getLayoutIcon(text: string) {
   return Check;
 }
 
-export function UnitLayoutList({ title, sleepingLayout, features, compact = false, className }: UnitLayoutListProps) {
-  const items = [sleepingLayout, ...features];
+export function UnitLayoutList({ title, dimensions, sleepingLayout, features, compact = false, className }: UnitLayoutListProps) {
+  const items = dimensions ? [dimensions, sleepingLayout, ...features] : [sleepingLayout, ...features];
 
   return (
     <div className={cn('space-y-2', className)}>

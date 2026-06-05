@@ -12,9 +12,19 @@ const defaultDescription = 'CrossVillage Zeddam met verwarmde woonunits voor het
 const siteName = 'CrossVillage Zeddam';
 const defaultMetaImagePath = `${import.meta.env.BASE_URL}logo-crossvillage.jpg`;
 
+function normalizeSiteUrl(configuredSiteUrl: string | undefined) {
+  const normalizedValue = configuredSiteUrl?.trim() ?? '';
+
+  if (!normalizedValue) {
+    return undefined;
+  }
+
+  return normalizedValue.replace(/^\/+/, '').replace(/\/$/, '');
+}
+
 export function SeoHead({ title, description, robots, canonicalPath, jsonLd }: SeoHeadProps) {
   const metaDescription = description ?? defaultDescription;
-  const configuredSiteUrl = import.meta.env.VITE_SITE_URL?.replace(/\/$/, '');
+  const configuredSiteUrl = normalizeSiteUrl(import.meta.env.VITE_SITE_URL);
   const browserOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
   const siteUrl = configuredSiteUrl ?? browserOrigin;
   const canonicalUrl = siteUrl && canonicalPath ? `${siteUrl}${canonicalPath}` : undefined;

@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, Flame, Footprints, MapPinned, ShowerHead, Users } from 'lucide-react';
+import { ArrowRight, Bike, ChevronDown, Flame, MapPinned, ShowerHead, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
@@ -39,7 +39,7 @@ export function HomePage() {
   const conceptPoints = getConceptPoints(locale);
   const faqItems = getFaqItems(locale);
   const locationHighlights = getLocationHighlights(locale);
-  const locationHighlightIcons = [MapPinned, ShowerHead, ArrowRight] as const;
+  const locationHighlightIcons = [MapPinned, ShowerHead, Bike] as const;
   const unitTypes = getUnitTypes(locale);
   const availabilityQuery = useQuery(bookingAvailabilityQueryOptions());
   const availability = availabilityQuery.data ?? [];
@@ -102,6 +102,23 @@ export function HomePage() {
     },
   ];
 
+  const renderFaqAnswer = (answer: string) => {
+    const marker = 'Let op:';
+    const markerIndex = answer.indexOf(marker);
+
+    if (markerIndex === -1) {
+      return answer;
+    }
+
+    return (
+      <>
+        {answer.slice(0, markerIndex)}
+        <strong className="font-semibold text-white">{marker}</strong>
+        {answer.slice(markerIndex + marker.length)}
+      </>
+    );
+  };
+
   return (
     <>
       <SeoHead
@@ -129,7 +146,7 @@ export function HomePage() {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,12,10,0.14)_0%,rgba(10,16,14,0.06)_28%,rgba(7,12,10,0.24)_100%)]" />
           <div className="relative z-10 p-5 sm:p-7 lg:px-8 lg:py-12">
             <div className="max-w-3xl">
-              <h1 className="font-display text-4xl font-extrabold uppercase leading-none tracking-[0.04em] text-white sm:text-5xl">
+              <h1 className="font-display text-3xl font-extrabold uppercase leading-none tracking-[0.04em] text-white sm:text-5xl">
                 {copy.heroTitle}
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-stone-100/92 sm:text-lg">
@@ -161,7 +178,7 @@ export function HomePage() {
 
           <div className="grid gap-3 sm:grid-cols-3">
             <article className="rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
-              <Footprints className="size-5 text-[#76BD23]" />
+              <Bike className="size-5 text-[#76BD23]" />
               <p className="mt-3 text-base font-semibold text-white">{conceptPoints[0].title}</p>
               <p className="mt-2 text-sm leading-6 text-stone-300">{conceptPoints[0].description}</p>
             </article>
@@ -217,6 +234,7 @@ export function HomePage() {
                       <div className="rounded-2xl border border-dashed border-[#76BD23]/35 bg-[#1C5733]/20 p-4">
                         <UnitLayoutList
                           title={copy.layoutLabel}
+                          dimensions={unit.dimensions}
                           sleepingLayout={unit.sleepingLayout}
                           features={unit.features}
                         />
@@ -287,7 +305,9 @@ export function HomePage() {
               return (
               <article key={item.title} className="rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
                 <div className="flex items-start gap-3">
-                  <Icon className="mt-1 size-5 text-[#00953B]" />
+                  <span className="flex size-10 shrink-0 items-center justify-center text-[#00953B]">
+                    <Icon className="size-6" />
+                  </span>
                   <div>
                     <p className="text-base font-semibold text-white">{item.title}</p>
                     <p className="mt-2 text-sm leading-6 text-stone-300">{item.description}</p>
@@ -315,7 +335,7 @@ export function HomePage() {
                     <ChevronDown className="size-4" />
                   </span>
                 </summary>
-                <p className="px-4 pb-4 text-sm leading-7 text-stone-300">{item.answer}</p>
+                <p className="px-4 pb-4 text-sm leading-7 text-stone-300">{renderFaqAnswer(item.answer)}</p>
               </details>
             ))}
           </div>

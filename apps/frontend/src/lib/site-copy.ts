@@ -99,10 +99,27 @@ type TermsCopy = {
   }>;
 };
 
+type AboutCopy = {
+  seoTitle: string;
+  seoDescription: string;
+  eyebrow: string;
+  title: string;
+  intro: string;
+  sections: Array<{
+    title: string;
+    body: string;
+  }>;
+  closing: string;
+  signature: string;
+  backToBooking: string;
+  backToHome: string;
+};
+
 type SiteCopy = {
   home: HomeCopy;
   booking: BookingCopy;
   terms: TermsCopy;
+  about: AboutCopy;
 };
 
 export const siteCopy: Record<Locale, SiteCopy> = {
@@ -138,7 +155,7 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       seoDescription:
         'Kies je unit, controleer de beschikbaarheid en vraag direct je verblijf aan voor CrossVillage Zeddam tijdens het EK Veldrijden van 5 t/m 9 november 2026.',
       stepLabels: ['Unit', 'Gegevens', 'Betalen'],
-      pageTitle: 'Reserveer je warme EK-basis in 3 stappen',
+      pageTitle: 'Reserveer je woonunit in 3 stappen',
       successEyebrow: 'Aanvraag ontvangen',
       successTitle: 'Je aanvraag staat klaar voor opvolging.',
       successMessage: (confirmationCode) => [
@@ -150,12 +167,12 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       makeAnother: 'Nog een aanvraag doen',
       step1Title: '1. Kies je unittype',
       step1Description:
-        'Kies per unitsoort hoeveel exemplaren je nodig hebt. In de dropdown zie je alleen het aantal dat nog beschikbaar is.',
+        'Kies per unitsoort hoeveel units je wilt reserveren.',
       personsLabel: 'Personen',
       quantityLabel: 'Aantal',
       selectedUnitsTitle: 'Gekozen units',
       selectedUnitsEmpty: 'Selecteer minimaal één unit om door te gaan naar je gegevens.',
-      priceForStayLabel: (nightLabel) => `Prijs voor ${nightLabel}`,
+      priceForStayLabel: () => 'Weekendprijs',
       perNight: 'per nacht',
       layoutLabel: 'Indeling',
       availabilityLoading: 'Beschikbaarheid wordt geladen',
@@ -163,7 +180,7 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       unitTypeLabel: 'Type unit',
       step2Title: '2. Vul je verblijfsgegevens in',
       step2Description:
-        'Houd de flow kort. Alleen de data die nodig is om de aanvraag te bevestigen en de planning rond het EK-weekend te regelen. Aankomst kan van donderdag 5 november tot en met maandag 9 november, vertrek van vrijdag 6 november tot en met dinsdag 10 november.',
+        'Klaar voor een geweldig EK-weekend? Je boekt bij ons een speciaal 5-daags arrangement. Ongeacht aankomst en vertrekdatum betaalt u een vaste prijs voor het hele pakket.',
       labels: {
         guestName: 'Naam',
         guestEmail: 'E-mail',
@@ -187,9 +204,9 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       stayDurationLabel: 'Verblijfsduur',
       stayDurationDescription: (checkIn, checkOut, nightLabel) =>
         `Bij aankomst op ${checkIn} en vertrek op ${checkOut} verblijf je ${nightLabel}.`,
-      step3Title: '3. Controleer en verstuur',
+      step3Title: '3.  Controleer en verstuur',
       step3Description:
-        'Na bevestiging ontvang je instructies voor betaling per bankoverschrijving. De reservering is pas definitief na ontvangst van de betaling.',
+        'Na je bevestiging ontvangen wij jouw aanvraag. Wij nemen vervolgens via e-mail persoonlijk contact met je op om de boeking door te nemen en de betaalinstructies te delen. Zodra de betaling via bankoverschrijving is afgerond, is jouw warme EK-basis definitief gereserveerd.',
       chosenUnit: 'Gekozen unit',
       totalAmount: 'Totaalbedrag',
       contactPerson: 'Contactpersoon',
@@ -260,6 +277,31 @@ export const siteCopy: Record<Locale, SiteCopy> = {
         },
       ],
     },
+    about: {
+      seoTitle: 'Over ons | CrossVillage Zeddam',
+      seoDescription:
+        'Lees hoe de familie Bleekman CrossVillage Zeddam startte als pop-up camping voor het EK Veldrijden 2026.',
+      eyebrow: 'Over ons',
+      title: 'Welkom bij onze pop-up camping',
+      intro:
+        'Wij zijn de familie Bleekman en we kijken er enorm naar uit om jullie te ontvangen tijdens het Europees Kampioenschap Veldrijden 2026 in het prachtige Zeddam.',
+      sections: [
+        {
+          title: 'Hoe het allemaal begon...',
+          body:
+            'Toen bekend werd dat het EK Veldrijden op 7 en 8 november 2026 naar Zeddam zou komen, begon het bij ons meteen te kriebelen. Het belooft een waanzinnig sportfestijn te worden. Maar met duizenden enthousiaste wielerfans die onze kant op komen, rees al snel de vraag: waar gaat iedereen slapen?\n\nGelukkig dacht de gemeente Montferland met ons mee. Onlangs besloten zij om rondom het EK een unieke, eenmalige uitzondering te maken. Om de drukte op te vangen en het toerisme in de regio een boost te geven, mogen grondeigenaren in het buitengebied voor maximaal zes dagen een tijdelijke pop-up camping openen. Twee dagen voor de race opbouwen, het weekend zelf vieren, en de dag erna weer rustig inpakken. Toen we dat hoorden, lieten we er als familie natuurlijk geen gras over groeien!',
+        },
+        {
+          title: 'Samen de schouders eronder',
+          body:
+            'En zo ontstond het initiatief voor onze pop-up camping. We besloten onze ruimte open te stellen en om te toveren tot een gezellige, praktische uitvalsbasis voor veldritfans. Omdat wij voor dat ene weekend alles uit de kast halen en de woonunits speciaal voor deze paar dagen worden opgebouwd, betaal je bij ons niet per nacht, maar boek je meteen voor het hele feestelijke weekend.\n\nGeen ingewikkelde poespas, maar gewoon een warme en gastvrije plek waar je na een dag koukleumen en juichen langs het parcours echt even kunt bijkomen.\n\nWe zijn achter de schermen druk bezig om alles tot in de puntjes voor te bereiden. Heb je er al net zoveel zin in als wij? We zien je heel graag in november!',
+        },
+      ],
+      closing: 'Sportieve groet,',
+      signature: 'De Familie Bleekman',
+      backToBooking: 'Bekijk de woonunits',
+      backToHome: 'Naar homepage',
+    },
   },
   en: {
     home: {
@@ -305,12 +347,12 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       makeAnother: 'Submit another request',
       step1Title: '1. Choose your units',
       step1Description:
-        'Choose how many units you need per unit type. The dropdown only shows the quantity that is still available.',
+        'Choose how many units you want to reserve per unit type.',
       personsLabel: 'Persons',
       quantityLabel: 'Quantity',
       selectedUnitsTitle: 'Selected units',
       selectedUnitsEmpty: 'Select at least one unit to continue to your details.',
-      priceForStayLabel: (nightLabel) => `Price for ${nightLabel}`,
+      priceForStayLabel: () => 'Weekend price',
       perNight: 'per night',
       layoutLabel: 'Layout',
       availabilityLoading: 'Loading availability',
@@ -318,7 +360,7 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       unitTypeLabel: 'Unit type',
       step2Title: '2. Enter your stay details',
       step2Description:
-        'Keep the flow short. Only the information needed to confirm the request and coordinate the championship weekend planning. Arrival is possible from Thursday 5 November through Monday 9 November, departure from Friday 6 November through Tuesday 10 November.',
+        'Fill in your contact and stay details. Arrival is possible from Thursday 5 November through Monday 9 November, departure from Friday 6 November through Tuesday 10 November.',
       labels: {
         guestName: 'Name',
         guestEmail: 'Email',
@@ -414,6 +456,31 @@ export const siteCopy: Record<Locale, SiteCopy> = {
             'Any complaints during the stay must be reported immediately on site to the Organisation so that it has the opportunity to resolve the complaint.\n\nAll agreements concluded with Totalrent B.V. are governed exclusively by Dutch law.\n\nDisputes will be submitted exclusively to the competent court in the district where Totalrent B.V. is established.',
         },
       ],
+    },
+    about: {
+      seoTitle: 'About us | CrossVillage Zeddam',
+      seoDescription:
+        'Read how the Bleekman family started CrossVillage Zeddam as a pop-up camping concept for the 2026 European Cyclo-cross Championships.',
+      eyebrow: 'About us',
+      title: 'Welcome to our pop-up camping',
+      intro:
+        'We are the Bleekman family and we are very much looking forward to welcoming you during the 2026 European Cyclo-cross Championships in beautiful Zeddam.',
+      sections: [
+        {
+          title: 'How it all started...',
+          body:
+            'When it was announced that the European Cyclo-cross Championships would come to Zeddam on 7 and 8 November 2026, we immediately felt the excitement. It promises to be an incredible sporting event. But with thousands of enthusiastic cycling fans heading our way, one question quickly came up: where is everyone going to sleep?\n\nFortunately, the municipality of Montferland thought along with us. They recently decided to make a unique one-time exception around the championship weekend. To absorb the crowds and give tourism in the region a boost, landowners in the rural area may open a temporary pop-up campsite for up to six days. Two days to build up before the race, the weekend itself to celebrate, and the day after to pack everything down again. Once we heard that, we as a family moved quickly.',
+        },
+        {
+          title: 'Working together as a family',
+          body:
+            'That is how the idea for our pop-up camping was born. We decided to open up our space and turn it into a welcoming, practical base for cyclo-cross fans. Because we go all in for that one special weekend and the accommodation units are built up especially for those few days, you do not pay per night with us, but book the full festive weekend in one go.\n\nNo unnecessary fuss, just a warm and hospitable place where you can truly recover after a day of cold weather and cheering along the course.\n\nBehind the scenes we are working hard to prepare everything down to the last detail. Are you looking forward to it just as much as we are? We would love to welcome you in November.',
+        },
+      ],
+      closing: 'Sporting regards,',
+      signature: 'The Bleekman Family',
+      backToBooking: 'View the accommodation units',
+      backToHome: 'Go to homepage',
     },
   },
 };
