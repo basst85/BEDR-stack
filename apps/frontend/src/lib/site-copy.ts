@@ -63,6 +63,7 @@ type BookingCopy = {
     notes: string;
   };
   validations: {
+    invalidEmail: string;
     invalidDates: string;
     checkInRange: string;
     checkOutRange: string;
@@ -196,6 +197,7 @@ export const siteCopy: Record<Locale, SiteCopy> = {
         notes: 'Bijvoorbeeld verwachte aankomsttijd of extra context voor de aanvraag',
       },
       validations: {
+        invalidEmail: 'Vul een geldig e-mailadres in.',
         invalidDates: 'Vul een geldige aankomst- en vertrekdatum in.',
         checkInRange: 'Aankomst moet tussen 5 november 2026 en 9 november 2026 liggen.',
         checkOutRange: 'Vertrek moet tussen 6 november 2026 en 10 november 2026 liggen.',
@@ -376,6 +378,7 @@ export const siteCopy: Record<Locale, SiteCopy> = {
         notes: 'For example your expected arrival time or extra context for the request',
       },
       validations: {
+        invalidEmail: 'Enter a valid email address.',
         invalidDates: 'Enter a valid arrival and departure date.',
         checkInRange: 'Arrival must be between 5 November 2026 and 9 November 2026.',
         checkOutRange: 'Departure must be between 6 November 2026 and 10 November 2026.',

@@ -28,6 +28,30 @@ export const bookingRequestsTable = sqliteTable('booking_requests', {
     .$defaultFn(() => new Date()),
 });
 
+export const bookingEmailLogsTable = sqliteTable('booking_email_logs', {
+  id: text('id').primaryKey(),
+  requestGroupId: text('request_group_id').notNull(),
+  emailType: text('email_type').notNull(),
+  provider: text('provider').notNull(),
+  providerMessageId: text('provider_message_id'),
+  status: text('status').notNull(),
+  recipientEmail: text('recipient_email').notNull(),
+  subject: text('subject').notNull(),
+  htmlBody: text('html_body').notNull(),
+  textBody: text('text_body').notNull(),
+  errorMessage: text('error_message'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const archivedReceivedEmailsTable = sqliteTable('archived_received_emails', {
+  emailId: text('email_id').primaryKey(),
+  archivedAt: integer('archived_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const unitStockTable = sqliteTable('unit_stock', {
   unitType: text('unit_type').primaryKey(),
   stock: integer('stock').notNull(),

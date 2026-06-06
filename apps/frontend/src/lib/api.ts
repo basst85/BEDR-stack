@@ -93,6 +93,45 @@ export type BmsBookingItem = {
   createdAt: string;
 };
 
+export type BmsBookingEmailLogItem = {
+  id: string;
+  requestGroupId: string;
+  emailType: string;
+  provider: string;
+  providerMessageId: string | null;
+  status: string;
+  recipientEmail: string;
+  subject: string;
+  htmlBody: string;
+  textBody: string;
+  errorMessage: string | null;
+  createdAt: string;
+  providerLastEvent: string | null;
+  providerCreatedAt: string | null;
+  providerFrom: string | null;
+  providerTo: string[] | null;
+  providerSubject: string | null;
+};
+
+export type BmsReceivedEmailItem = {
+  id: string;
+  to: string[];
+  from: string;
+  createdAt: string;
+  subject: string;
+  replyTo: string[];
+  messageId: string | null;
+  textBody: string | null;
+  htmlBody: string | null;
+};
+
+export type BmsReceivedEmailResponsePayload = {
+  action: 'reply' | 'forward';
+  to: string[];
+  subject: string;
+  textBody: string;
+};
+
 export type BmsStockItem = {
   unitType: string;
   title: string;
@@ -305,6 +344,63 @@ export const fetchBmsBookings = async (): Promise<BmsBookingItem[]> => {
   }
 
   return parseJson<BmsBookingItem[]>(response);
+};
+
+export const fetchBmsBookingEmails = async (): Promise<BmsBookingEmailLogItem[]> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/booking-emails`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de e-maillogs niet laden.');
+  }
+
+  return parseJson<BmsBookingEmailLogItem[]>(response);
+};
+
+export const fetchBmsReceivedEmails = async (): Promise<BmsReceivedEmailItem[]> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/received-emails`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de ontvangen e-mails niet laden.');
+  }
+
+  return parseJson<BmsReceivedEmailItem[]>(response);
+};
+
+export const respondToBmsReceivedEmail = async (
+  emailId: string,
+  payload: BmsReceivedEmailResponsePayload,
+): Promise<{ id: string }> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/received-emails/${emailId}/respond`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de e-mailactie niet uitvoeren.');
+  }
+
+  return parseJson<{ id: string }>(response);
+};
+
+export const archiveBmsReceivedEmail = async (emailId: string): Promise<{ success: true }> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/received-emails/${emailId}/archive`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de ontvangen e-mail niet archiveren.');
+  }
+
+  return parseJson<{ success: true }>(response);
 };
 
 export const cancelBmsBooking = async (requestGroupId: string): Promise<void> => {

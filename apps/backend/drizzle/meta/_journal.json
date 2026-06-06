@@ -29,6 +29,20 @@
       "when": 1780650000000,
       "tag": "0003_quick_confirmation_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780740000000,
+      "tag": "0004_resend_email_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780830000000,
+      "tag": "0005_archived_received_emails",
+      "breakpoints": true
     }
   ]
 }

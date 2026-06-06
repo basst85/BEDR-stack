@@ -20,7 +20,7 @@ afterEach(() => {
 
 describe('image optimization route', () => {
   test('optimizes images from allowed hosts', async () => {
-    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+    globalThis.fetch = mock(async (input: string | URL | Request) => {
       expect(String(input)).toBe('https://images.unsplash.com/demo-image.png');
 
       return new Response(tinyPng, {
@@ -28,7 +28,7 @@ describe('image optimization route', () => {
           'content-type': 'image/png',
         },
       });
-    });
+    }) as unknown as typeof fetch;
 
     const response = await app.handle(
       new Request(

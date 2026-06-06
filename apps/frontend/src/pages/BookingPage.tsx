@@ -351,6 +351,9 @@ export function BookingPage() {
   const unitPriceLabel = copy.priceForStayLabel(nightLabel);
   const stayStartLabel = formatLocalizedDate(formData.checkIn, locale);
   const stayDepartureLabel = formatLocalizedDate(formData.checkOut, locale);
+  const trimmedGuestEmail = formData.guestEmail.trim();
+  const hasEmailInput = trimmedGuestEmail.length > 0;
+  const hasValidGuestEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedGuestEmail);
   const dateErrors = useMemo(() => {
     const errors: { checkIn: string | null; checkOut: string | null } = {
       checkIn: null,
@@ -418,7 +421,7 @@ export function BookingPage() {
 
   const isDetailsStepValid =
     formData.guestName.trim().length >= 2 &&
-    formData.guestEmail.trim().length >= 5 &&
+    hasValidGuestEmail &&
     formData.guestPhone.replace(/[^\d]/g, '').length >= 6 &&
     !dateErrors.checkIn &&
     !dateErrors.checkOut &&
@@ -683,9 +686,13 @@ export function BookingPage() {
                         onChange={(event) =>
                           setFormData((current) => ({ ...current, guestEmail: event.target.value }))
                         }
+                        aria-invalid={hasEmailInput && !hasValidGuestEmail ? 'true' : 'false'}
                         className="h-11 rounded-xl border-white/10 bg-black/20 text-white"
                         placeholder={copy.placeholders.guestEmail}
                       />
+                      {hasEmailInput && !hasValidGuestEmail ? (
+                        <p className="text-sm text-red-300">{copy.validations.invalidEmail}</p>
+                      ) : null}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="guestPhone" className="text-stone-100"><RequiredLabel>{copy.labels.guestPhone}</RequiredLabel></Label>
@@ -858,7 +865,7 @@ export function BookingPage() {
                       type="checkbox"
                       checked={acceptedTerms}
                       onChange={(event) => setAcceptedTerms(event.target.checked)}
-                      className="mt-1 size-4 rounded border-white/15 bg-transparent"
+                      className="mt-0.5 size-5 rounded border-white/15 bg-transparent"
                     />
                     <span>
                       {copy.agreePrefix} <Link to={localizePath('/voorwaarden')} className="text-[#D6CAA0] underline underline-offset-4">{copy.agreeTerms}</Link>.

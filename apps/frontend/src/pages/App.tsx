@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Mail, Menu, X } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
@@ -116,6 +116,7 @@ export function App() {
   const location = useLocation();
   const { copy, localizePath } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const contactEmail = 'contact@booking.crossvillagezeddam.com';
 
   const navItems = [
     { href: localizePath('/#units'), label: copy.nav.units },
@@ -201,7 +202,17 @@ export function App() {
           <Outlet />
 
           <footer className="mt-6 flex flex-col gap-3 px-1 text-sm text-stone-400 sm:flex-row sm:items-center sm:justify-between">
-            <p>{copy.footer.summary}</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <a
+                href={`mailto:${contactEmail}`}
+                className="inline-flex items-center gap-2 text-stone-300 transition hover:text-white"
+              >
+                <Mail className="size-4 text-[#D6CAA0]" />
+                <span>
+                  <span className="text-stone-400">Contact</span>
+                </span>
+              </a>
+            </div>
             <LanguageSwitcher />
           </footer>
         </div>

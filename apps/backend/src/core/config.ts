@@ -1,6 +1,59 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { type UnitTypeValue, unitTypeValues } from '@backend/modules/booking/booking.model';
 
+const parseDotEnvValue = (rawValue: string) => {
+  const trimmedValue = rawValue.trim();
+
+  if (
+    (trimmedValue.startsWith('"') && trimmedValue.endsWith('"')) ||
+    (trimmedValue.startsWith("'") && trimmedValue.endsWith("'"))
+  ) {
+    return trimmedValue.slice(1, -1);
+  }
+
+  return trimmedValue;
+};
+
+const loadEnvFile = (path: string) => {
+  if (!existsSync(path)) {
+    return;
+  }
+
+  const contents = readFileSync(path, 'utf8');
+
+  for (const line of contents.split(/\r?\n/)) {
+    const trimmedLine = line.trim();
+
+    if (!trimmedLine || trimmedLine.startsWith('#')) {
+      continue;
+    }
+
+    const separatorIndex = trimmedLine.indexOf('=');
+
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = trimmedLine.slice(0, separatorIndex).trim();
+
+    if (!key || process.env[key] !== undefined) {
+      continue;
+    }
+
+    process.env[key] = parseDotEnvValue(trimmedLine.slice(separatorIndex + 1));
+  }
+};
+
+loadEnvFile(resolve(import.meta.dir, '../../../../.env'));
+loadEnvFile(resolve(import.meta.dir, '../../.env'));
+
 const getEnv = (name: string, fallback: string) => process.env[name] ?? fallback;
+const getOptionalEnv = (name: string) => {
+  const value = (process.env[name] ?? '').trim();
+  return value ? value : '';
+};
 
 export const isProduction = process.env.NODE_ENV === 'production';
 
@@ -126,4 +179,8 @@ export const config = {
   bookingStockByUnitType,
   bmsUser: getEnv('BMS_USER', 'crossvillage'),
   bmsPassword: getEnv('BMS_PASSWORD', 'admin123'),
+  resendApiKey: getOptionalEnv('RESEND_API_KEY'),
+  resendAdminApiKey: getOptionalEnv('RESEND_ADMIN_API_KEY'),
+  resendFromEmail: getOptionalEnv('RESEND_FROM_EMAIL'),
+  resendReplyTo: getOptionalEnv('RESEND_REPLY_TO'),
 };

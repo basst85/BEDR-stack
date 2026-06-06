@@ -22,16 +22,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
+  archiveBmsReceivedEmail,
   approveBmsBooking,
   deleteBmsBooking,
+  fetchBmsBookingEmails,
   fetchBmsBookings,
+  fetchBmsReceivedEmails,
   cancelBmsBooking,
   fetchBmsSession,
   fetchBmsStocks,
   loginBms,
   logoutBms,
+  respondToBmsReceivedEmail,
   updateBmsStock,
   type BmsBookingItem,
+  type BmsBookingEmailLogItem,
+  type BmsReceivedEmailItem,
   type BmsStockItem,
 } from '@/lib/api';
 
@@ -50,6 +56,7 @@ type GroupedBooking = {
     unitType: string;
     quantity: number;
   }>;
+  emails: BmsBookingEmailLogItem[];
 };
 
 type BookingStatusFilter = 'pending' | 'approved' | 'cancelled';
@@ -60,12 +67,20 @@ const bookingStatusLabels: Record<BookingStatusFilter, string> = {
   cancelled: 'Geannuleerd',
 };
 
+type ReceivedEmailComposerState = {
+  email: BmsReceivedEmailItem;
+  action: 'reply' | 'forward';
+  to: string;
+  subject: string;
+  textBody: string;
+};
+
 export function BmsAdminPage() {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'stocks' | 'bookings'>('stocks');
+  const [activeTab, setActiveTab] = useState<'stocks' | 'bookings' | 'received-emails'>('stocks');
   const [searchQuery, setSearchQuery] = useState('');
   const [localStocks, setLocalStocks] = useState<Record<string, number>>({});
   const [statusFilters, setStatusFilters] = useState<Record<BookingStatusFilter, boolean>>({
@@ -73,6 +88,7 @@ export function BmsAdminPage() {
     approved: true,
     cancelled: false,
   });
+  const [composerState, setComposerState] = useState<ReceivedEmailComposerState | null>(null);
 
   // Query: BMS Session
   const sessionQuery = useQuery<{ authenticated: boolean; user?: string }>({
@@ -92,6 +108,18 @@ export function BmsAdminPage() {
   const bookingsQuery = useQuery<BmsBookingItem[]>({
     queryKey: ['bms-bookings'],
     queryFn: fetchBmsBookings,
+    enabled: !!sessionQuery.data?.authenticated,
+  });
+
+  const bookingEmailsQuery = useQuery<BmsBookingEmailLogItem[]>({
+    queryKey: ['bms-booking-emails'],
+    queryFn: fetchBmsBookingEmails,
+    enabled: !!sessionQuery.data?.authenticated,
+  });
+
+  const receivedEmailsQuery = useQuery<BmsReceivedEmailItem[]>({
+    queryKey: ['bms-received-emails'],
+    queryFn: fetchBmsReceivedEmails,
     enabled: !!sessionQuery.data?.authenticated,
   });
 
@@ -134,6 +162,7 @@ export function BmsAdminPage() {
         ) ?? current,
       );
       queryClient.invalidateQueries({ queryKey: ['bms-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bms-booking-emails'] });
       queryClient.invalidateQueries({ queryKey: ['bms-stocks'] });
       queryClient.invalidateQueries({ queryKey: ['booking-availability'] });
     },
@@ -158,8 +187,37 @@ export function BmsAdminPage() {
         current?.filter((booking) => booking.requestGroupId !== requestGroupId) ?? current,
       );
       queryClient.invalidateQueries({ queryKey: ['bms-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bms-booking-emails'] });
       queryClient.invalidateQueries({ queryKey: ['bms-stocks'] });
       queryClient.invalidateQueries({ queryKey: ['booking-availability'] });
+    },
+  });
+
+  const respondToReceivedEmailMutation = useMutation({
+    mutationFn: ({
+      emailId,
+      payload,
+    }: {
+      emailId: string;
+      payload: {
+        action: 'reply' | 'forward';
+        to: string[];
+        subject: string;
+        textBody: string;
+      };
+    }) => respondToBmsReceivedEmail(emailId, payload),
+    onSuccess: () => {
+      setComposerState(null);
+    },
+  });
+
+  const archiveReceivedEmailMutation = useMutation({
+    mutationFn: archiveBmsReceivedEmail,
+    onSuccess: (_, emailId) => {
+      queryClient.setQueryData<BmsReceivedEmailItem[]>(['bms-received-emails'], (current) =>
+        current?.filter((email) => email.id !== emailId) ?? current,
+      );
+      queryClient.invalidateQueries({ queryKey: ['bms-received-emails'] });
     },
   });
 
@@ -238,8 +296,76 @@ export function BmsAdminPage() {
     deleteBookingMutation.mutate(requestGroupId);
   };
 
+  const openReceivedEmailComposer = (email: BmsReceivedEmailItem, action: 'reply' | 'forward') => {
+    const defaultReplyRecipient = email.replyTo[0] || email.from;
+    const defaultSubject =
+      action === 'reply'
+        ? email.subject.toLowerCase().startsWith('re:')
+          ? email.subject
+          : `Re: ${email.subject}`
+        : email.subject.toLowerCase().startsWith('fwd:')
+          ? email.subject
+          : `Fwd: ${email.subject}`;
+
+    setComposerState({
+      email,
+      action,
+      to: action === 'reply' ? defaultReplyRecipient : '',
+      subject: defaultSubject,
+      textBody: '',
+    });
+  };
+
+  const closeReceivedEmailComposer = () => {
+    if (respondToReceivedEmailMutation.isPending) {
+      return;
+    }
+
+    setComposerState(null);
+  };
+
+  const submitReceivedEmailComposer = () => {
+    if (!composerState) {
+      return;
+    }
+
+    const recipients = composerState.to
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    if (recipients.length === 0 || !composerState.subject.trim() || !composerState.textBody.trim()) {
+      return;
+    }
+
+    respondToReceivedEmailMutation.mutate({
+      emailId: composerState.email.id,
+      payload: {
+        action: composerState.action,
+        to: recipients,
+        subject: composerState.subject.trim(),
+        textBody: composerState.textBody.trim(),
+      },
+    });
+  };
+
+  const handleArchiveReceivedEmail = (email: BmsReceivedEmailItem) => {
+    const confirmed = window.confirm(
+      `Weet je zeker dat je de ontvangen e-mail "${email.subject}" wilt archiveren? Deze verdwijnt uit het overzicht, maar blijft bestaan in Resend.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    archiveReceivedEmailMutation.mutate(email.id);
+  };
+
   // Group bookings by requestGroupId
-  const getGroupedBookings = (items: BmsBookingItem[]): GroupedBooking[] => {
+  const getGroupedBookings = (
+    items: BmsBookingItem[],
+    emailsByRequestGroupId: Map<string, BmsBookingEmailLogItem[]>,
+  ): GroupedBooking[] => {
     const grouped = new Map<string, GroupedBooking>();
     items.forEach((item) => {
       if (!grouped.has(item.requestGroupId)) {
@@ -255,6 +381,7 @@ export function BmsAdminPage() {
           status: item.status,
           createdAt: item.createdAt,
           lines: [],
+          emails: emailsByRequestGroupId.get(item.requestGroupId) ?? [],
         });
       }
       grouped.get(item.requestGroupId)!.lines.push({
@@ -364,7 +491,16 @@ export function BmsAdminPage() {
 
   // Filter Bookings
   const rawBookings = bookingsQuery.data ?? [];
-  const groupedBookings = getGroupedBookings(rawBookings);
+  const bookingEmails = bookingEmailsQuery.data ?? [];
+  const bookingEmailsByRequestGroupId = new Map<string, BmsBookingEmailLogItem[]>();
+
+  bookingEmails.forEach((email) => {
+    const current = bookingEmailsByRequestGroupId.get(email.requestGroupId) ?? [];
+    current.push(email);
+    bookingEmailsByRequestGroupId.set(email.requestGroupId, current);
+  });
+
+  const groupedBookings = getGroupedBookings(rawBookings, bookingEmailsByRequestGroupId);
   const filteredBookings = groupedBookings.filter((booking) => {
     const normalizedStatus = booking.status.toLowerCase() as BookingStatusFilter;
     if (normalizedStatus in statusFilters && !statusFilters[normalizedStatus]) {
@@ -377,6 +513,18 @@ export function BmsAdminPage() {
       booking.guestEmail.toLowerCase().includes(query) ||
       booking.requestGroupId.toLowerCase().includes(query) ||
       booking.confirmationCode?.includes(query)
+    );
+  });
+  const receivedEmails = receivedEmailsQuery.data ?? [];
+  const filteredReceivedEmails = receivedEmails.filter((email) => {
+    const query = searchQuery.toLowerCase();
+
+    return (
+      email.subject.toLowerCase().includes(query) ||
+      email.from.toLowerCase().includes(query) ||
+      email.to.some((recipient) => recipient.toLowerCase().includes(query)) ||
+      (email.textBody?.toLowerCase().includes(query) ?? false) ||
+      (email.htmlBody?.toLowerCase().includes(query) ?? false)
     );
   });
 
@@ -428,6 +576,17 @@ export function BmsAdminPage() {
         >
           <CalendarRange className="size-4" />
           Boekingen ({groupedBookings.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('received-emails')}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition border-b-2 ${
+            activeTab === 'received-emails'
+              ? 'border-[#76BD23] text-white'
+              : 'border-transparent text-stone-400 hover:text-white'
+          }`}
+        >
+          <CalendarRange className="size-4" />
+          Ontvangen e-mails ({receivedEmails.length})
         </button>
       </div>
 
@@ -601,7 +760,7 @@ export function BmsAdminPage() {
             })}
           </div>
 
-          {bookingsQuery.isLoading ? (
+          {bookingsQuery.isLoading || bookingEmailsQuery.isLoading ? (
             <div className="flex py-12 items-center justify-center">
               <RefreshCw className="size-6 animate-spin text-[#76BD23]" />
             </div>
@@ -651,92 +810,98 @@ export function BmsAdminPage() {
                 const bookingCode = booking.confirmationCode ?? booking.requestGroupId.slice(0, 6);
 
                 return (
-                  <div
+                  <details
                     key={booking.requestGroupId}
-                    className="border-border bg-card/60 flex flex-col rounded-[1.5rem] border p-5 transition hover:border-white/15 hover:bg-card/75"
+                    className="border-border bg-card/60 rounded-[1.5rem] border p-5 transition hover:border-white/15 hover:bg-card/75"
                   >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      {/* Guest Details */}
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <h3 className="text-lg font-bold text-white">{booking.guestName}</h3>
-                          <Badge className="rounded-full border-white/8 bg-black/20 text-stone-300 font-mono text-xs">
-                            Code: {bookingCode}
+                    <summary className="cursor-pointer list-none">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <h3 className="text-lg font-bold text-white">{booking.guestName}</h3>
+                            <Badge className="rounded-full border-white/8 bg-black/20 text-stone-300 font-mono text-xs">
+                              Code: {bookingCode}
+                            </Badge>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-3 text-sm text-stone-300">
+                            <p>
+                              <span className="text-stone-400">E-mail:</span> {booking.guestEmail}
+                            </p>
+                            <p>
+                              <span className="text-stone-400">Verblijf:</span> {formattedCheckIn} t/m {formattedCheckOut}
+                            </p>
+                            <p>
+                              <span className="text-stone-400">Units:</span> {booking.lines.length}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                          <Badge
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                              isCancelled
+                                ? 'border-red-500/25 bg-red-500/15 text-red-100'
+                                : isApproved
+                                  ? 'border-sky-500/25 bg-sky-500/15 text-sky-100'
+                                  : 'border-[#76BD23]/25 bg-[#1C5733]/30 text-[#D9F0B6]'
+                            }`}
+                          >
+                            Status: {isCancelled ? 'Geannuleerd' : isApproved ? 'Geaccordeerd' : booking.status}
+                          </Badge>
+                          <Badge className="rounded-full border-white/8 bg-black/20 text-stone-300 text-xs">
+                            Geboekt op {formattedDate}
                           </Badge>
                         </div>
-                        <div className="mt-2 grid grid-cols-1 gap-1 text-sm text-stone-300 sm:grid-cols-3 sm:gap-4">
-                          <p>
-                            <span className="text-stone-400">E-mail:</span> {booking.guestEmail}
-                          </p>
-                          <p>
-                            <span className="text-stone-400">Telefoon:</span> {booking.guestPhone}
-                          </p>
-                          <p>
-                            <span className="text-stone-400">Geboekt op:</span> {formattedDate}
-                          </p>
-                        </div>
                       </div>
+                    </summary>
 
-                      <div className="flex items-center gap-2 self-start sm:self-auto">
-                        <Badge
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                            isCancelled
-                              ? 'border-red-500/25 bg-red-500/15 text-red-100'
-                              : isApproved
-                                ? 'border-sky-500/25 bg-sky-500/15 text-sky-100'
-                                : 'border-[#76BD23]/25 bg-[#1C5733]/30 text-[#D9F0B6]'
-                          }`}
-                        >
-                          Status: {isCancelled ? 'Geannuleerd' : isApproved ? 'Geaccordeerd' : booking.status}
-                        </Badge>
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-white/6 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleApproveBooking(booking.requestGroupId, booking.guestName)}
+                        disabled={isApproving || isApproved || isCancelled}
+                        className="rounded-full border-sky-500/25 bg-sky-500/10 px-3 text-sky-100 hover:bg-sky-500/20 hover:text-white disabled:opacity-50"
+                      >
+                        {isApproving ? (
+                          <RefreshCw className="mr-1.5 size-4 animate-spin" />
+                        ) : (
+                          <Check className="mr-1.5 size-4" />
+                        )}
+                        {isApproved ? 'Geaccordeerd' : 'Akkoord'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleCancelBooking(booking.requestGroupId, booking.guestName)}
+                        disabled={isCancelling || isCancelled || isDeleting}
+                        className="rounded-full border-red-500/25 bg-red-500/10 px-3 text-red-100 hover:bg-red-500/20 hover:text-white disabled:opacity-50"
+                      >
+                        {isCancelling ? (
+                          <RefreshCw className="mr-1.5 size-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="mr-1.5 size-4" />
+                        )}
+                        {isCancelled ? 'Geannuleerd' : 'Annuleren'}
+                      </Button>
+                      {isCancelled && (
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => handleApproveBooking(booking.requestGroupId, booking.guestName)}
-                          disabled={isApproving || isApproved || isCancelled}
-                          className="rounded-full border-sky-500/25 bg-sky-500/10 px-3 text-sky-100 hover:bg-sky-500/20 hover:text-white disabled:opacity-50"
+                          onClick={() => handleDeleteBooking(booking.requestGroupId, booking.guestName)}
+                          disabled={isDeleting}
+                          className="rounded-full border-red-700/35 bg-red-950/40 px-3 text-red-200 hover:bg-red-900/60 hover:text-white disabled:opacity-50"
                         >
-                          {isApproving ? (
-                            <RefreshCw className="mr-1.5 size-4 animate-spin" />
-                          ) : (
-                            <Check className="mr-1.5 size-4" />
-                          )}
-                          {isApproved ? 'Geaccordeerd' : 'Akkoord'}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => handleCancelBooking(booking.requestGroupId, booking.guestName)}
-                          disabled={isCancelling || isCancelled || isDeleting}
-                          className="rounded-full border-red-500/25 bg-red-500/10 px-3 text-red-100 hover:bg-red-500/20 hover:text-white disabled:opacity-50"
-                        >
-                          {isCancelling ? (
+                          {isDeleting ? (
                             <RefreshCw className="mr-1.5 size-4 animate-spin" />
                           ) : (
                             <Trash2 className="mr-1.5 size-4" />
                           )}
-                          {isCancelled ? 'Geannuleerd' : 'Annuleren'}
+                          Verwijderen
                         </Button>
-                        {isCancelled && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => handleDeleteBooking(booking.requestGroupId, booking.guestName)}
-                            disabled={isDeleting}
-                            className="rounded-full border-red-700/35 bg-red-950/40 px-3 text-red-200 hover:bg-red-900/60 hover:text-white disabled:opacity-50"
-                          >
-                            {isDeleting ? (
-                              <RefreshCw className="mr-1.5 size-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="mr-1.5 size-4" />
-                            )}
-                            Verwijderen
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
 
-                    {/* Booking dates and lines */}
                     <div className="mt-4 grid gap-4 border-t border-white/6 pt-4 sm:grid-cols-2">
                       <div className="rounded-2xl bg-black/10 border border-white/6 p-4">
                         <p className="text-xs font-semibold uppercase text-stone-400 tracking-wider">
@@ -785,6 +950,228 @@ export function BmsAdminPage() {
                         {booking.notes}
                       </div>
                     )}
+
+                    <div className="mt-4 rounded-2xl bg-black/10 border border-white/6 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">
+                        E-mailverzending
+                      </p>
+                      {booking.emails.length === 0 ? (
+                        <p className="mt-2.5 text-sm text-stone-400">
+                          Nog geen e-mailpogingen geregistreerd voor deze boeking.
+                        </p>
+                      ) : (
+                        <div className="mt-3 space-y-3">
+                          {booking.emails.map((email) => {
+                            const formattedEmailDate = new Date(email.createdAt).toLocaleDateString('nl-NL', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            });
+                            const formattedProviderDate = email.providerCreatedAt
+                              ? new Date(email.providerCreatedAt).toLocaleDateString('nl-NL', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : null;
+                            const isSent = email.status === 'sent';
+                            const isSkipped = email.status === 'skipped';
+
+                            return (
+                              <div
+                                key={email.id}
+                                className="rounded-xl border border-white/8 bg-black/15 p-3"
+                              >
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-white">{email.subject}</p>
+                                    <p className="mt-1 text-xs text-stone-400">
+                                      Naar {email.recipientEmail} via {email.provider} op {formattedEmailDate}
+                                    </p>
+                                  </div>
+                                  <Badge
+                                    className={`rounded-full border px-2.5 py-0.5 text-xs ${
+                                      isSent
+                                        ? 'border-[#76BD23]/35 bg-[#1C5733]/30 text-[#D9F0B6]'
+                                        : isSkipped
+                                          ? 'border-amber-500/30 bg-amber-500/15 text-amber-100'
+                                          : 'border-red-500/25 bg-red-500/15 text-red-100'
+                                    }`}
+                                  >
+                                    {isSent ? 'Verzonden' : isSkipped ? 'Overgeslagen' : 'Mislukt'}
+                                  </Badge>
+                                </div>
+
+                                {email.providerMessageId && (
+                                  <p className="mt-2 text-xs text-stone-400">
+                                    Resend ID: <span className="font-mono text-stone-300">{email.providerMessageId}</span>
+                                  </p>
+                                )}
+
+                                {email.providerLastEvent && (
+                                  <p className="mt-2 text-xs text-stone-400">
+                                    Resend status: <span className="font-semibold text-stone-200">{email.providerLastEvent}</span>
+                                    {formattedProviderDate ? ` op ${formattedProviderDate}` : ''}
+                                  </p>
+                                )}
+
+                                {email.providerFrom && (
+                                  <p className="mt-1 text-xs text-stone-400">
+                                    Van: {email.providerFrom}
+                                    {email.providerTo?.length ? ` • Aan: ${email.providerTo.join(', ')}` : ''}
+                                  </p>
+                                )}
+
+                                {email.errorMessage && (
+                                  <p className="mt-2 text-xs text-red-200">
+                                    Fout: {email.errorMessage}
+                                  </p>
+                                )}
+
+                                <details className="mt-3">
+                                  <summary className="cursor-pointer text-xs font-semibold text-stone-300 hover:text-white">
+                                    Body bekijken
+                                  </summary>
+                                  <div className="mt-2 space-y-3">
+                                    <div>
+                                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-stone-400">
+                                        Tekstversie
+                                      </p>
+                                      <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs leading-6 text-stone-300">
+                                        {email.textBody}
+                                      </pre>
+                                    </div>
+                                    <div>
+                                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-stone-400">
+                                        HTML-versie
+                                      </p>
+                                      <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs leading-6 text-stone-300">
+                                        {email.htmlBody}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                </details>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'received-emails' && (
+        <div className="space-y-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-stone-400">
+              <Search className="size-5" />
+            </div>
+            <Input
+              type="text"
+              placeholder="Zoek op onderwerp, afzender of inhoud..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 rounded-2xl bg-card/60 border-white/10 text-white placeholder:text-stone-500 focus-visible:ring-[#76BD23]"
+            />
+          </div>
+
+          {receivedEmailsQuery.isLoading ? (
+            <div className="flex py-12 items-center justify-center">
+              <RefreshCw className="size-6 animate-spin text-[#76BD23]" />
+            </div>
+          ) : receivedEmailsQuery.isError ? (
+            <div className="border border-red-400/20 bg-red-400/10 rounded-[2rem] p-5 text-sm text-red-100">
+              {receivedEmailsQuery.error instanceof Error
+                ? receivedEmailsQuery.error.message
+                : 'Kon ontvangen e-mails niet laden.'}
+            </div>
+          ) : filteredReceivedEmails.length === 0 ? (
+            <div className="border-border bg-card/40 rounded-[2rem] border p-12 text-center">
+              <AlertCircle className="size-8 text-stone-400 mx-auto" />
+              <p className="mt-3 text-stone-300 font-medium">Geen ontvangen e-mails gevonden.</p>
+              <p className="mt-1 text-sm text-stone-400">
+                Er zijn momenteel geen ontvangen e-mails die voldoen aan de zoekcriteria.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredReceivedEmails.map((email) => {
+                const formattedReceivedDate = new Date(email.createdAt).toLocaleDateString('nl-NL', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+                const preferredBody = email.textBody?.trim() || email.htmlBody?.trim() || 'Geen inhoud beschikbaar.';
+
+                return (
+                  <div
+                    key={email.id}
+                    className="border-border bg-card/60 flex flex-col rounded-[1.5rem] border p-5 transition hover:border-white/15 hover:bg-card/75"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-lg font-bold text-white">{email.subject}</h3>
+                        <div className="mt-2 space-y-1 text-sm text-stone-300">
+                          <p><span className="text-stone-400">Van:</span> {email.from}</p>
+                          <p><span className="text-stone-400">Aan:</span> {email.to.join(', ') || '-'}</p>
+                          <p><span className="text-stone-400">Ontvangen op:</span> {formattedReceivedDate}</p>
+                        </div>
+                      </div>
+                      <Badge className="rounded-full border-white/8 bg-black/20 text-stone-300 font-mono text-xs">
+                        {email.id}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => openReceivedEmailComposer(email, 'reply')}
+                        className="rounded-full border-[#76BD23]/35 bg-[#1C5733]/20 px-4 text-[#D9F0B6] hover:bg-[#1C5733]/35 hover:text-white"
+                      >
+                        Beantwoorden
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => openReceivedEmailComposer(email, 'forward')}
+                        className="rounded-full border-white/10 bg-black/10 px-4 text-stone-200 hover:bg-white/6 hover:text-white"
+                      >
+                        Doorsturen
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleArchiveReceivedEmail(email)}
+                        disabled={archiveReceivedEmailMutation.isPending && archiveReceivedEmailMutation.variables === email.id}
+                        className="rounded-full border-red-500/25 bg-red-500/10 px-4 text-red-100 hover:bg-red-500/20 hover:text-white disabled:opacity-50"
+                      >
+                        {archiveReceivedEmailMutation.isPending && archiveReceivedEmailMutation.variables === email.id ? (
+                          <RefreshCw className="mr-1.5 size-4 animate-spin" />
+                        ) : null}
+                        Archiveren
+                      </Button>
+                    </div>
+
+                    <details className="mt-4 rounded-2xl bg-black/10 border border-white/6 p-4">
+                      <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-stone-400 hover:text-white">
+                        Inhoud bekijken
+                      </summary>
+                      <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs leading-6 text-stone-300">
+                        {preferredBody}
+                      </pre>
+                    </details>
                   </div>
                 );
               })}
@@ -792,6 +1179,115 @@ export function BmsAdminPage() {
           )}
         </div>
       )}
+
+      {composerState ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-[2rem] border border-white/10 bg-[#161b1d] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.45)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
+                  {composerState.action === 'reply' ? 'Beantwoorden' : 'Doorsturen'}
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">{composerState.subject}</h2>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeReceivedEmailComposer}
+                disabled={respondToReceivedEmailMutation.isPending}
+                className="rounded-full border-white/10 bg-black/10 text-stone-200 hover:bg-white/6 hover:text-white"
+              >
+                Sluiten
+              </Button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="received-email-to" className="text-stone-200 font-medium">Aan</Label>
+                <Input
+                  id="received-email-to"
+                  value={composerState.to}
+                  onChange={(event) =>
+                    setComposerState((current) => (current ? { ...current, to: event.target.value } : current))
+                  }
+                  className="rounded-2xl bg-black/20 border-white/10 text-white placeholder:text-stone-500 focus-visible:ring-[#76BD23]"
+                  placeholder="naam@voorbeeld.nl, tweede@voorbeeld.nl"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="received-email-subject" className="text-stone-200 font-medium">Onderwerp</Label>
+                <Input
+                  id="received-email-subject"
+                  value={composerState.subject}
+                  onChange={(event) =>
+                    setComposerState((current) => (current ? { ...current, subject: event.target.value } : current))
+                  }
+                  className="rounded-2xl bg-black/20 border-white/10 text-white placeholder:text-stone-500 focus-visible:ring-[#76BD23]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="received-email-text" className="text-stone-200 font-medium">Bericht</Label>
+                <textarea
+                  id="received-email-text"
+                  value={composerState.textBody}
+                  onChange={(event) =>
+                    setComposerState((current) => (current ? { ...current, textBody: event.target.value } : current))
+                  }
+                  className="min-h-48 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-[#76BD23]/45"
+                  placeholder="Typ hier je antwoord of toelichting..."
+                />
+              </div>
+
+              <details className="rounded-2xl border border-white/8 bg-black/15 p-4">
+                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-stone-400 hover:text-white">
+                  Oorspronkelijke e-mail
+                </summary>
+                <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs leading-6 text-stone-300">
+                  {composerState.email.textBody?.trim() || composerState.email.htmlBody?.trim() || 'Geen inhoud beschikbaar.'}
+                </pre>
+              </details>
+
+              {respondToReceivedEmailMutation.isError ? (
+                <div className="rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-100">
+                  {respondToReceivedEmailMutation.error instanceof Error
+                    ? respondToReceivedEmailMutation.error.message
+                    : 'Kon de e-mailactie niet uitvoeren.'}
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeReceivedEmailComposer}
+                  disabled={respondToReceivedEmailMutation.isPending}
+                  className="rounded-full border-white/10 bg-black/10 text-stone-200 hover:bg-white/6 hover:text-white"
+                >
+                  Annuleren
+                </Button>
+                <Button
+                  type="button"
+                  onClick={submitReceivedEmailComposer}
+                  disabled={
+                    respondToReceivedEmailMutation.isPending ||
+                    !composerState.to.trim() ||
+                    !composerState.subject.trim() ||
+                    !composerState.textBody.trim()
+                  }
+                  className="rounded-full bg-[#76BD23] px-5 text-[#10311c] hover:bg-[#6eb220]"
+                >
+                  {respondToReceivedEmailMutation.isPending ? (
+                    <RefreshCw className="mr-1.5 size-4 animate-spin" />
+                  ) : null}
+                  Verzenden
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

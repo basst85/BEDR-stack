@@ -19,6 +19,7 @@ process.env.BOOKING_STOCK_730 = '3';
 process.env.BOOKING_STOCK_733 = '2';
 process.env.BOOKING_STOCK_900 = '1';
 process.env.BOOKING_STOCK_CABINE = '8';
+process.env.RESEND_FROM_EMAIL = 'CrossVillage <onboarding@resend.dev>';
 
 const { sqlite } = await import('@backend/core/db');
 
@@ -64,10 +65,36 @@ sqlite.exec(`
   );
 `);
 
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS booking_email_logs (
+    id TEXT PRIMARY KEY NOT NULL,
+    request_group_id TEXT NOT NULL,
+    email_type TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    provider_message_id TEXT,
+    status TEXT NOT NULL,
+    recipient_email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    html_body TEXT NOT NULL,
+    text_body TEXT NOT NULL,
+    error_message TEXT,
+    created_at INTEGER NOT NULL
+  );
+`);
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS archived_received_emails (
+    email_id TEXT PRIMARY KEY NOT NULL,
+    archived_at INTEGER NOT NULL
+  );
+`);
+
 beforeEach(() => {
   sqlite.exec('DELETE FROM users;');
   sqlite.exec('DELETE FROM booking_requests;');
   sqlite.exec('DELETE FROM unit_stock;');
+  sqlite.exec('DELETE FROM booking_email_logs;');
+  sqlite.exec('DELETE FROM archived_received_emails;');
 });
 
 afterAll(() => {

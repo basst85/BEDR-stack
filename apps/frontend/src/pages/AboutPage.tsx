@@ -5,6 +5,7 @@ import { siteCopy } from '@/lib/site-copy';
 export function AboutPage() {
   const { locale, localizePath } = useI18n();
   const copy = siteCopy[locale].about;
+  const contactEmail = 'contact@booking.crossvillagezeddam.com';
 
   return (
     <>
@@ -40,6 +41,9 @@ export function AboutPage() {
             <div className="space-y-2 border-t border-white/10 pt-6">
               <p className="text-sm leading-7 text-stone-200">{copy.closing}</p>
               <p className="text-lg font-semibold text-white">{copy.signature}</p>
+              <p className="text-sm leading-7 text-stone-300">
+                Contact: <a href={`mailto:${contactEmail}`} className="text-[#D6CAA0] underline underline-offset-4">{contactEmail}</a>
+              </p>
             </div>
           </div>
         </article>

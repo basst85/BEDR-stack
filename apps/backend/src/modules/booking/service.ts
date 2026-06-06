@@ -4,12 +4,15 @@ import { config } from '@backend/core/config';
 import { db } from '@backend/core/db';
 
 import {
+  archivedReceivedEmailsTable,
+  bookingEmailLogsTable,
   bookingRequestsTable,
   unitStockTable,
   type BookingRequestPayload,
   type UnitTypeValue,
   unitTypeValues,
 } from './booking.model';
+import { listResendReceivedEmails, listResendSentEmails, respondToReceivedEmail, sendBookingConfirmationEmail } from './email.service';
 
 const unitCatalog: Record<UnitTypeValue, { title: string }> = {
   '420': { title: '2 persoons unit met stapelbed' },
@@ -113,9 +116,13 @@ export class BookingService {
 
     const requestGroupId = crypto.randomUUID();
     const confirmationCode = await this.generateConfirmationCode();
+    const groupedBookingLines = Array.from(groupedLines.entries()).map(([unitType, quantity]) => ({
+      unitType,
+      quantity,
+    }));
 
     await db.insert(bookingRequestsTable).values(
-      Array.from(groupedLines.entries()).map(([unitType, quantity]) => ({
+      groupedBookingLines.map(({ unitType, quantity }) => ({
         id: crypto.randomUUID(),
         requestGroupId,
         confirmationCode,
@@ -131,10 +138,36 @@ export class BookingService {
       })),
     );
 
+    const emailLog = await sendBookingConfirmationEmail({
+      requestGroupId,
+      confirmationCode,
+      guestName: payload.guestName,
+      guestEmail: payload.guestEmail,
+      guestPhone: payload.guestPhone,
+      checkIn: payload.checkIn,
+      checkOut: payload.checkOut,
+      notes: payload.notes,
+      lines: groupedBookingLines,
+    });
+
+    await db.insert(bookingEmailLogsTable).values({
+      id: crypto.randomUUID(),
+      requestGroupId,
+      emailType: emailLog.emailType,
+      provider: emailLog.provider,
+      providerMessageId: emailLog.providerMessageId,
+      status: emailLog.status,
+      recipientEmail: emailLog.recipientEmail,
+      subject: emailLog.subject,
+      htmlBody: emailLog.htmlBody,
+      textBody: emailLog.textBody,
+      errorMessage: emailLog.errorMessage,
+    });
+
     return {
       id: requestGroupId,
       confirmationCode,
-      lines: Array.from(groupedLines.entries()).map(([unitType, quantity]) => ({
+      lines: groupedBookingLines.map(({ unitType, quantity }) => ({
         unitType,
         quantity,
         remaining: (availabilityByUnitType.get(unitType)?.remaining ?? 0) - quantity,
@@ -169,6 +202,59 @@ export class BookingService {
       .select()
       .from(bookingRequestsTable)
       .orderBy(desc(bookingRequestsTable.createdAt));
+  }
+
+  async getAllBookingEmailLogs() {
+    const logs = await db
+      .select()
+      .from(bookingEmailLogsTable)
+      .orderBy(desc(bookingEmailLogsTable.createdAt));
+
+    const resendEmails = await listResendSentEmails();
+    const resendEmailsById = new Map(resendEmails.map((email) => [email.id, email]));
+
+    return logs.map((log) => {
+      const resendEmail = log.providerMessageId ? resendEmailsById.get(log.providerMessageId) : undefined;
+
+      return {
+        ...log,
+        providerLastEvent: resendEmail?.lastEvent ?? null,
+        providerCreatedAt: resendEmail?.createdAt ?? null,
+        providerFrom: resendEmail?.from ?? null,
+        providerTo: resendEmail?.to ?? null,
+        providerSubject: resendEmail?.subject ?? null,
+      };
+    });
+  }
+
+  async getAllReceivedEmails() {
+    const archivedEmails = await db.select().from(archivedReceivedEmailsTable);
+    const archivedEmailIds = new Set(archivedEmails.map((item) => item.emailId));
+    const receivedEmails = await listResendReceivedEmails();
+
+    return receivedEmails.filter((email) => !archivedEmailIds.has(email.id));
+  }
+
+  async respondToReceivedEmail(params: {
+    emailId: string;
+    action: 'reply' | 'forward';
+    to: string[];
+    subject: string;
+    textBody: string;
+  }) {
+    return respondToReceivedEmail(params);
+  }
+
+  async archiveReceivedEmail(emailId: string) {
+    await db
+      .insert(archivedReceivedEmailsTable)
+      .values({
+        emailId,
+        archivedAt: new Date(),
+      })
+      .onConflictDoNothing();
+
+    return { success: true as const };
   }
 
   async cancelBookingGroup(requestGroupId: string) {
@@ -222,6 +308,10 @@ export class BookingService {
     if (existingBooking.status !== 'cancelled') {
       throw new Error('Alleen geannuleerde boekingen kunnen definitief verwijderd worden.');
     }
+
+    await db
+      .delete(bookingEmailLogsTable)
+      .where(eq(bookingEmailLogsTable.requestGroupId, requestGroupId));
 
     await db
       .delete(bookingRequestsTable)

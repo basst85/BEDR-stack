@@ -121,6 +121,7 @@ Before deploying or sharing the project, verify:
 - `JWT_SECRET`, `COOKIE_NAME`, and database settings match your environment
 - `IMAGE_ALLOWED_HOSTS` controls which remote hosts the backend image optimizer may fetch from
 - booking stock can be configured per unit type with `BOOKING_STOCK_420`, `BOOKING_STOCK_660`, `BOOKING_STOCK_730`, `BOOKING_STOCK_733`, `BOOKING_STOCK_900`, and `BOOKING_STOCK_CABINE`
+- booking confirmation emails use Resend via `RESEND_API_KEY`; configure the sender with `RESEND_FROM_EMAIL` and optionally `RESEND_REPLY_TO`
 - Docker build args and exposed ports match your deployment setup
 
 ### Example Migration Path

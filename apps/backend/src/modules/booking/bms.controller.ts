@@ -151,6 +151,131 @@ export const bmsController = new Elysia({ prefix: '/bms' })
       },
     },
   )
+  .get(
+    '/booking-emails',
+    async ({ request, set }) => {
+      const isValid = await verifyBmsSession(request.headers.get('cookie'));
+
+      if (!isValid) {
+        set.status = 401;
+        return {
+          message: 'Niet geautoriseerd.',
+        };
+      }
+
+      const emailLogs = await bookingService.getAllBookingEmailLogs();
+      return emailLogs;
+    },
+    {
+      detail: {
+        tags: ['bms'],
+        summary: 'Retrieve all booking email logs',
+      },
+    },
+  )
+  .get(
+    '/received-emails',
+    async ({ request, set }) => {
+      const isValid = await verifyBmsSession(request.headers.get('cookie'));
+
+      if (!isValid) {
+        set.status = 401;
+        return {
+          message: 'Niet geautoriseerd.',
+        };
+      }
+
+      try {
+        const receivedEmails = await bookingService.getAllReceivedEmails();
+        return receivedEmails;
+      } catch (error) {
+        set.status = 502;
+        return {
+          message: error instanceof Error ? error.message : 'Kon ontvangen e-mails niet ophalen via Resend.',
+        };
+      }
+    },
+    {
+      detail: {
+        tags: ['bms'],
+        summary: 'Retrieve received emails from Resend',
+      },
+    },
+  )
+  .post(
+    '/received-emails/:emailId/respond',
+    async ({ params, body, request, set }) => {
+      const isValid = await verifyBmsSession(request.headers.get('cookie'));
+
+      if (!isValid) {
+        set.status = 401;
+        return {
+          message: 'Niet geautoriseerd.',
+        };
+      }
+
+      try {
+        return await bookingService.respondToReceivedEmail({
+          emailId: params.emailId,
+          action: body.action,
+          to: body.to,
+          subject: body.subject,
+          textBody: body.textBody,
+        });
+      } catch (error) {
+        set.status = 502;
+        return {
+          message: error instanceof Error ? error.message : 'Kon e-mailactie niet uitvoeren via Resend.',
+        };
+      }
+    },
+    {
+      params: t.Object({
+        emailId: t.String({ minLength: 1 }),
+      }),
+      body: t.Object({
+        action: t.Union([t.Literal('reply'), t.Literal('forward')]),
+        to: t.Array(t.String({ format: 'email' }), { minItems: 1 }),
+        subject: t.String({ minLength: 1 }),
+        textBody: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        tags: ['bms'],
+        summary: 'Reply to or forward a received email via Resend',
+      },
+    },
+  )
+  .post(
+    '/received-emails/:emailId/archive',
+    async ({ params, request, set }) => {
+      const isValid = await verifyBmsSession(request.headers.get('cookie'));
+
+      if (!isValid) {
+        set.status = 401;
+        return {
+          message: 'Niet geautoriseerd.',
+        };
+      }
+
+      try {
+        return await bookingService.archiveReceivedEmail(params.emailId);
+      } catch (error) {
+        set.status = 500;
+        return {
+          message: error instanceof Error ? error.message : 'Kon ontvangen e-mail niet archiveren.',
+        };
+      }
+    },
+    {
+      params: t.Object({
+        emailId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        tags: ['bms'],
+        summary: 'Archive a received email locally in the BMS',
+      },
+    },
+  )
   .delete(
     '/bookings/:requestGroupId/permanent',
     async ({ params, request, set }) => {

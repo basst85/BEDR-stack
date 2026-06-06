@@ -2,9 +2,10 @@ import { formatCurrency, resolvePublicAssetPath, type Locale } from '@/lib/i18n'
 
 const unitPreviewImageSrc = resolvePublicAssetPath('impressie.jpg');
 const unit420ImageSources = [1, 2, 3, 4, 5].map((index) => resolvePublicAssetPath(`420/420-${index}.jpg`));
-const unit660ImageSources = [1, 2, 3, 4, 5, 6].map((index) => resolvePublicAssetPath(`660/660-${index}.jpg`));
+const unit660ImageSources = [1, 2, 3, 4, 5].map((index) => resolvePublicAssetPath(`660/660-${index}.jpg`));
 const unit730ImageSources = [1, 2, 3, 4, 5, 6].map((index) => resolvePublicAssetPath(`730/730-${index}.jpg`));
 const unit733ImageSources = [1, 2, 3, 4, 5, 6, 7].map((index) => resolvePublicAssetPath(`733/733-${index}.jpg`));
+const unit900ImageSources = [1, 2, 3, 4, 5, 6, 7].map((index) => resolvePublicAssetPath(`900/900-${index}.jpg`));
 const unit730CabinImageSources = [1, 2, 3, 4, 5].map((index) => resolvePublicAssetPath(`730-cabin/730-cabin-${index}.jpg`));
 
 type UnitType = {
@@ -88,7 +89,7 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       summary:
         'Voor wie net wat meer comfort zoekt. Deze volledig geisoleerde VIP woonunit biedt plaats aan maximaal vijf personen en combineert ruimte, privacy en gemak. De ideale uitvalsbasis om overdag het EK te beleven en s avonds comfortabel te ontspannen.',
       features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
-      images: [{ src: unitPreviewImageSrc, alt: 'Drie tot vijf-persoons VIP woonunit' }],
+      images: unit900ImageSources.map((src, index) => ({ src, alt: `Drie tot vijf-persoons VIP woonunit foto ${index + 1}` })),
     },
     {
       id: 'cabine',
@@ -168,7 +169,7 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       summary:
         'For those looking for just a little more comfort. This fully insulated VIP accommodation unit sleeps up to five people and combines space, privacy and convenience. The ideal base to enjoy the championships during the day and relax in comfort in the evening.',
       features: ['Shower, toilet and washbasin', 'Simple kitchen', 'Fully insulated'],
-      images: [{ src: unitPreviewImageSrc, alt: 'Three to five-person VIP accommodation unit' }],
+      images: unit900ImageSources.map((src, index) => ({ src, alt: `Three to five-person VIP accommodation unit photo ${index + 1}` })),
     },
     {
       id: 'cabine',

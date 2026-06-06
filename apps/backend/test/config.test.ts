@@ -32,7 +32,7 @@ describe('config security', () => {
       `../src/core/config.ts?cors-defaults=${Date.now()}`
     );
 
-    expect(config.corsOrigins).toEqual([]);
+    expect(config.corsOrigins).toEqual(['http://localhost:5173']);
     expect(isAllowedCorsOrigin('http://localhost:5173')).toBe(true);
     expect(isAllowedCorsOrigin('http://localhost:4173')).toBe(true);
     expect(isAllowedCorsOrigin('http://127.0.0.1:5173')).toBe(true);
