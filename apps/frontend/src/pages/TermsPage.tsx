@@ -40,15 +40,6 @@ export function TermsPage() {
             </article>
           ))}
         </div>
-
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Button asChild className="rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]">
-            <Link to={localizePath('/boeken')}>{copy.backToBooking}</Link>
-          </Button>
-          <Button asChild variant="outline" className="rounded-full border-[#00953B]/25 bg-[#1C5733]/16 text-white hover:bg-[#1C5733]/22">
-            <Link to={localizePath('/')}>{copy.backToHome}</Link>
-          </Button>
-        </div>
       </section>
     </>
   );

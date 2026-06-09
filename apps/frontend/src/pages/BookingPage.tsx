@@ -868,7 +868,7 @@ export function BookingPage() {
                       className="mt-0.5 size-5 rounded border-white/15 bg-transparent"
                     />
                     <span>
-                      {copy.agreePrefix} <Link to={localizePath('/voorwaarden')} className="text-[#D6CAA0] underline underline-offset-4">{copy.agreeTerms}</Link>.
+                      {copy.agreePrefix} <Link to={localizePath('/voorwaarden')} className="text-[#D6CAA0] underline underline-offset-4" target="_blank">{copy.agreeTerms}</Link>.
                     </span>
                   </label>
 
