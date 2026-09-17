@@ -35,8 +35,8 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       dimensions: 'Type unit 420 • 10 m2',
       sleepingLayout: '1 slaapkamer met stapelbed',
       summary:
-        'Compact en comfortabel. Deze 2-persoons unit biedt het nodige voor een ontspannen verblijf tijdens het EK veldrijden. Na een dag langs het parcours kom je tot rust in een warme, volledig geisoleerde unit met eigen sanitair en basiskeuken zonder oven, vriezer en een opbergkastje minder dan de overige woonunits.',
-      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
+        'Compact en comfortabel. Deze 2-persoons unit biedt het nodige voor een ontspannen verblijf tijdens het EK veldrijden. Na een dag langs het parcours kom je tot rust in een warme, volledig geïsoleerde unit met eigen sanitair en basiskeuken zonder oven, vriezer en een opbergkastje minder dan de overige woonunits.',
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geïsoleerd'],
       images: unit420ImageSources.map((src, index) => ({ src, alt: `2 persoons unit met stapelbed foto ${index + 1}` })),
     },
     {
@@ -48,8 +48,8 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       dimensions: 'Type unit 660 • 16 m2',
       sleepingLayout: '1 slaapkamer met twee losse bedden',
       summary:
-        'Compact, comfortabel en van alle gemakken voorzien. Deze 2-persoons unit biedt alles wat je nodig hebt voor een ontspannen verblijf tijdens het EK veldrijden. Na een dag langs het parcours kom je tot rust in een warme, volledig geisoleerde unit met eigen sanitair en keuken.',
-      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
+        'Compact, comfortabel en van alle gemakken voorzien. Deze 2-persoons unit biedt alles wat je nodig hebt voor een ontspannen verblijf tijdens het EK veldrijden. Na een dag langs het parcours kom je tot rust in een warme, volledig geïsoleerde unit met eigen sanitair en keuken.',
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geïsoleerd'],
       images: unit660ImageSources.map((src, index) => ({ src, alt: `2 persoons unit met 2 losse bedden foto ${index + 1}` })),
     },
     {
@@ -61,8 +61,8 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       dimensions: 'Type unit 730 • 18 m2',
       sleepingLayout: '2 slaapkamers met een stapelbed',
       summary:
-        'Perfect voor vrienden, familie of een klein gezelschap dat het EK veldrijden van dichtbij wil beleven. Met twee slaapkamers, een eigen keuken en prive sanitair biedt deze volledig geisoleerde unit alles voor een comfortabel verblijf.',
-      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
+        'Perfect voor vrienden, familie of een klein gezelschap dat het EK veldrijden van dichtbij wil beleven. Met twee slaapkamers, een eigen keuken en privé sanitair biedt deze volledig geïsoleerde unit alles voor een comfortabel verblijf.',
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geïsoleerd'],
       images: unit730ImageSources.map((src, index) => ({ src, alt: `4 persoons unit met twee stapelbedden foto ${index + 1}` })),
     },
     {
@@ -75,7 +75,7 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       sleepingLayout: '2 slaapkamers met tweepersoonsbed en stapelbed',
       summary:
         'Deze comfortabele 4-persoons unit is ideaal voor gezinnen, stellen of vrienden die wat extra ruimte waarderen. Met een aparte slaapkamer met tweepersoonsbed en een slaapkamer met stapelbed, plus een eigen keuken en sanitair, geniet je van een zorgeloos verblijf tijdens het EK veldrijden.',
-      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geïsoleerd'],
       images: unit733ImageSources.map((src, index) => ({ src, alt: `4 persoons unit met stapelbed en tweepersoonsbed foto ${index + 1}` })),
     },
     {
@@ -87,8 +87,8 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       dimensions: 'Type unit 900 • 22 m2',
       sleepingLayout: '2 slaapkamers geschikt voor 5 personen',
       summary:
-        'Voor wie net wat meer comfort zoekt. Deze volledig geisoleerde VIP woonunit biedt plaats aan maximaal vijf personen en combineert ruimte, privacy en gemak. De ideale uitvalsbasis om overdag het EK te beleven en s avonds comfortabel te ontspannen.',
-      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geisoleerd'],
+        "Voor wie net wat meer comfort zoekt. Deze volledig geïsoleerde VIP woonunit biedt plaats aan maximaal vijf personen en combineert ruimte, privacy en gemak. De ideale uitvalsbasis om overdag het EK te beleven en 's avonds comfortabel te ontspannen.",
+      features: ['Douche, toilet en wastafel', 'Eenvoudige keuken', 'Volledig geïsoleerd'],
       images: unit900ImageSources.map((src, index) => ({ src, alt: `Drie tot vijf-persoons VIP woonunit foto ${index + 1}` })),
     },
     {
@@ -100,8 +100,8 @@ const unitTypesByLocale: Record<Locale, UnitType[]> = {
       dimensions: 'Compartiment • 5 m2',
       sleepingLayout: '4 slaapkamers met een stapelbed',
       summary:
-        'Een compacte en budgetvriendelijke keuze voor twee personen. Dit 2-persoons compartiment bevindt zich in een volledig geisoleerde 8-persoons slaapwagen en biedt een comfortabele plek om te overnachten na een dag vol veldritactie.',
-      features: ['Douche, toilet en wastafel', 'Volledig geisoleerd', 'Compact en budgetvriendelijk'],
+        'Een compacte en budgetvriendelijke keuze voor twee personen. Dit 2-persoons compartiment bevindt zich in een volledig geïsoleerde 8-persoons slaapwagen en biedt een comfortabele plek om te overnachten na een dag vol veldritactie.',
+      features: ['Douche, toilet en wastafel', 'Volledig geïsoleerd', 'Compact en budgetvriendelijk'],
       images: unit730CabinImageSources.map((src, index) => ({ src, alt: `2 persoons compartiment in slaapwagen foto ${index + 1}` })),
     },
   ],
@@ -227,7 +227,7 @@ const locationHighlightsByLocale = {
 const conceptPointsByLocale = {
   nl: [
     { title: '6 min. rijden', description: 'naar het EK-parcours in Zeddam' },
-    { title: 'Altijd warm', description: 'volledig geisoleerd voor koude novembernachten' },
+    { title: 'Altijd warm', description: 'volledig geïsoleerd voor koude novembernachten' },
     { title: 'Eigen sanitair', description: 'geen nachtelijke wandelingen naar een toiletgebouw' },
   ],
   en: [

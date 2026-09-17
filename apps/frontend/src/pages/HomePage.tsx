@@ -46,7 +46,6 @@ export function HomePage() {
   const locationsQuery = useQuery(locationsQueryOptions());
   const locations = locationsQuery.data ?? [];
   const heroImageSrc = resolvePublicAssetPath('impressie.jpg');
-  const addressLabel = locale === 'en' ? 'Address' : 'Adres';
   const mapButtonLabel = locale === 'en' ? 'Google Maps' : 'Google Maps';
   const primaryAddress = locations[0]?.address ?? 'Zeddamseweg 16, Kilder';
   const configuredSiteUrl = import.meta.env.VITE_SITE_URL?.replace(/\/$/, '');
@@ -138,6 +137,8 @@ export function HomePage() {
             quality={80}
             fill
             sizes="100vw"
+            loading="eager"
+            fetchPriority="high"
             className="scale-[1.02] object-cover brightness-[0.62] contrast-[0.92] saturate-[0.82]"
           />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(214,202,160,0.12),transparent_24%),linear-gradient(90deg,rgba(8,14,11,0.82)_0%,rgba(14,24,19,0.62)_34%,rgba(26,38,35,0.28)_66%,rgba(24,34,31,0.14)_100%)]" />
@@ -174,22 +175,20 @@ export function HomePage() {
             </p>
           </article>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <article className="rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
-              <Bike className="size-5 text-[#76BD23]" />
-              <p className="mt-3 text-base font-semibold text-white">{conceptPoints[0].title}</p>
-              <p className="mt-2 text-sm leading-6 text-stone-300">{conceptPoints[0].description}</p>
-            </article>
-            <article className="rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
-              <Flame className="size-5 text-[#D6CAA0]" />
-              <p className="mt-3 text-base font-semibold text-white">{conceptPoints[1].title}</p>
-              <p className="mt-2 text-sm leading-6 text-stone-300">{conceptPoints[1].description}</p>
-            </article>
-            <article className="rounded-[1.5rem] border border-white/10 bg-black/15 p-4">
-              <ShowerHead className="size-5 text-[#00953B]" />
-              <p className="mt-3 text-base font-semibold text-white">{conceptPoints[2].title}</p>
-              <p className="mt-2 text-sm leading-6 text-stone-300">{conceptPoints[2].description}</p>
-            </article>
+          <div className="grid gap-6 sm:grid-cols-3">
+            {[
+              { Icon: Bike, color: 'text-[#76BD23]', point: conceptPoints[0] },
+              { Icon: Flame, color: 'text-[#D6CAA0]', point: conceptPoints[1] },
+              { Icon: ShowerHead, color: 'text-[#00953B]', point: conceptPoints[2] },
+            ].map(({ Icon, color, point }) => (
+              <div key={point.title} className="flex items-start gap-3">
+                <Icon className={`mt-1 size-5 shrink-0 ${color}`} />
+                <div>
+                  <p className="text-xl font-bold tracking-tight text-white">{point.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-pretty text-stone-300">{point.description}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -279,8 +278,7 @@ export function HomePage() {
                     <div className="grid gap-0 lg:grid-cols-[0.95fr_1.25fr]">
                       <div className="flex flex-col justify-between gap-4 p-5 sm:p-6">
                         <div>
-                          <p className="text-xs text-[#D6CAA0]">{location.name}</p>
-                          <p className="mt-4 text-sm font-semibold text-white">{addressLabel}</p>
+                          <p className="text-lg font-semibold text-white">{location.name}</p>
                           <p className="mt-2 text-sm leading-7 text-stone-300">{location.address}</p>
                         </div>
 

@@ -504,19 +504,25 @@ export function BookingPage() {
                 return (
                   <div
                     key={label}
-                    className={`min-w-fit rounded-full border px-4 py-2 ${
-                      isActive
-                        ? 'border-[#76BD23]/45 bg-[#1C5733]/25'
-                        : isDone
-                          ? 'border-[#00953B]/35 bg-[#1C5733]/18'
-                          : 'border-white/8 bg-black/15'
+                    className={`flex min-w-fit items-center gap-2.5 rounded-full border px-4 py-2 ${
+                      isActive ? 'border-white/25 bg-white/5' : 'border-white/8 bg-black/15'
                     }`}
                   >
-                    <div className="flex items-center gap-2 text-white">
-                      <span className="text-xs uppercase tracking-[0.22em] text-stone-400">{locale === 'en' ? 'Step' : 'Stap'} {stepNumber}</span>
-                      {isDone ? <Check className="size-4 text-[#76BD23]" /> : null}
-                      <span className="font-medium">{label}</span>
-                    </div>
+                    <span
+                      className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        isDone
+                          ? 'bg-[#76BD23] text-[#10311c]'
+                          : isActive
+                            ? 'border-2 border-[#76BD23] text-[#76BD23]'
+                            : 'border border-white/20 text-stone-500'
+                      }`}
+                    >
+                      <span className="sr-only">{locale === 'en' ? 'Step' : 'Stap'} {stepNumber}: </span>
+                      {isDone ? <Check className="size-3.5" /> : stepNumber}
+                    </span>
+                    <span className={`font-medium ${isActive ? 'text-white' : isDone ? 'text-stone-200' : 'text-stone-500'}`}>
+                      {label}
+                    </span>
                   </div>
                 );
               })}
@@ -694,32 +700,20 @@ export function BookingPage() {
                             key={location.id}
                             type="button"
                             onClick={() => setSelectedLocationId(location.id)}
-                            className={`flex flex-col items-start gap-3 rounded-[1.5rem] border p-5 text-left transition ${
+                            aria-pressed={isSelected}
+                            className={`relative rounded-[1.5rem] border-2 bg-black/15 p-5 text-left transition ${
                               isSelected
-                                ? 'border-[#76BD23]/60 bg-[#1C5733]/25'
-                                : 'border-white/10 bg-black/15 hover:border-[#76BD23]/30 hover:bg-[#1C5733]/12'
+                                ? 'border-[#76BD23]'
+                                : 'border-white/10 hover:border-white/25'
                             }`}
                           >
-                            <div className="flex w-full items-start justify-between gap-3">
-                              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1C5733]/30 text-[#76BD23]">
-                                <MapPin className="size-5" />
-                              </span>
-                              {isSelected ? (
-                                <span className="flex items-center gap-1.5 rounded-full border border-[#76BD23]/45 bg-[#1C5733]/30 px-3 py-1 text-xs font-semibold text-[#D9F0B6]">
-                                  <Check className="size-3.5" />
-                                  {copy.locationSelectedLabel}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div>
-                              <p className="text-lg font-semibold text-white">{location.name}</p>
-                              <p className="mt-1 text-sm leading-6 text-stone-300">{location.address}</p>
-                            </div>
-                            {!isSelected ? (
-                              <span className="mt-1 text-sm font-semibold text-[#D6CAA0]">
-                                {copy.chooseLocationLabel}
+                            {isSelected ? (
+                              <span className="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-[#76BD23] text-[#10311c]">
+                                <Check className="size-4" />
                               </span>
                             ) : null}
+                            <p className="pr-8 text-lg font-semibold text-white">{location.name}</p>
+                            <p className="mt-2 text-sm leading-6 text-stone-300">{location.address}</p>
                           </button>
                         );
                       })}

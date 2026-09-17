@@ -48,9 +48,6 @@ type BookingCopy = {
   unitTypeLabel: string;
   locationStepTitle: string;
   locationStepDescription: string;
-  chooseLocationLabel: string;
-  locationSelectedLabel: string;
-  selectedLocationLabel: string;
   step3Title: string;
   step3Description: string;
   labels: {
@@ -94,7 +91,6 @@ type BookingCopy = {
 type TermsCopy = {
   seoTitle: string;
   seoDescription: string;
-  eyebrow: string;
   title: string;
   intro: string;
   backToBooking: string;
@@ -137,7 +133,7 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       heroAlt: 'Warme eventcamping vlak bij het veldritparcours',
       heroTitle: 'Overnacht in warmte tijdens het EK Veldrijden 2026 in Zeddam.',
       heroDescription:
-        'Volledig geisoleerde en verwarmde woonunits op slechts 6 minuten rijden van het parcours. Boek jouw verblijf van donderdag 5 november tot en met 9 november.',
+        'Volledig geïsoleerde en verwarmde woonunits op slechts 6 minuten rijden van het parcours. Boek jouw verblijf van donderdag 5 november tot en met 9 november.',
       heroTags: ['5 nachten', '6 minuten rijden van het parcours'],
       heroCta: 'Bekijk beschikbare units',
       introTitle: 'Modder buiten, comfort binnen',
@@ -187,9 +183,6 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       locationStepTitle: '2. Kies je locatie',
       locationStepDescription:
         'We hebben twee locaties in Zeddam. Kies de locatie waar je wilt verblijven.',
-      chooseLocationLabel: 'Kies deze locatie',
-      locationSelectedLabel: 'Geselecteerd',
-      selectedLocationLabel: 'Gekozen locatie',
       step3Title: '3. Vul je verblijfsgegevens in',
       step3Description:
         'Klaar voor een geweldig EK-weekend? Je boekt bij ons een speciaal 5-daags arrangement. Ongeacht aankomst en vertrekdatum betaalt u een vaste prijs voor het hele pakket.',
@@ -236,7 +229,6 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       seoTitle: 'Algemene voorwaarden | CrossVillage Zeddam',
       seoDescription:
         'Lees de algemene voorwaarden van CrossVillage Zeddam over reservering, betaling, annulering, huisregels, aansprakelijkheid en verblijf tijdens het EK-weekend.',
-      eyebrow: 'Algemene voorwaarden',
       title: 'Algemene Voorwaarden Cross Village Zeddam',
       intro:
         'Onderstaande voorwaarden zijn van toepassing op alle aanbiedingen, reserveringen en overeenkomsten met betrekking tot de accommodaties van Cross Village Zeddam.',
@@ -374,9 +366,6 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       locationStepTitle: '2. Choose your location',
       locationStepDescription:
         'We have two locations in Zeddam. Choose the location where you want to stay.',
-      chooseLocationLabel: 'Choose this location',
-      locationSelectedLabel: 'Selected',
-      selectedLocationLabel: 'Selected location',
       step3Title: '3. Enter your stay details',
       step3Description:
         'Fill in your contact and stay details. Arrival is possible from Thursday 5 November through Monday 9 November, departure from Friday 6 November through Tuesday 10 November.',
@@ -423,7 +412,6 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       seoTitle: 'General terms | CrossVillage Zeddam',
       seoDescription:
         'Read the general terms for CrossVillage Zeddam covering reservation, payment, cancellation, house rules, liability and your stay during the championship weekend.',
-      eyebrow: 'General terms',
       title: 'General Terms Cross Village Zeddam',
       intro:
         'The terms below apply to all offers, reservations and agreements relating to the accommodations of Cross Village Zeddam.',

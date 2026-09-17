@@ -19,7 +19,6 @@ export function TermsPage() {
 
       <section className="rounded-[2rem] border border-white/10 bg-card/80 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.24)] sm:p-7">
         <div className="max-w-2xl space-y-3">
-          <p className="text-xs uppercase tracking-[0.28em] text-stone-400">{copy.eyebrow}</p>
           <h1 className="font-display text-3xl font-bold uppercase tracking-[0.04em] text-white sm:text-4xl">
             {copy.title}
           </h1>
