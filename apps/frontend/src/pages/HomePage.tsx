@@ -7,7 +7,7 @@ import { SeoHead } from '@/components/SeoHead';
 import { UnitImageCarousel } from '@/components/UnitImageCarousel';
 import { Button } from '@/components/ui/button';
 import { UnitLayoutList } from '../components/UnitLayoutList';
-import { bookingAvailabilityQueryOptions } from '@/lib/api';
+import { bookingAvailabilityQueryOptions, locationsQueryOptions } from '@/lib/api';
 import { formatCurrency, resolvePublicAssetPath, useI18n } from '@/lib/i18n';
 import { siteCopy } from '@/lib/site-copy';
 import {
@@ -43,13 +43,12 @@ export function HomePage() {
   const unitTypes = getUnitTypes(locale);
   const availabilityQuery = useQuery(bookingAvailabilityQueryOptions());
   const availability = availabilityQuery.data ?? [];
+  const locationsQuery = useQuery(locationsQueryOptions());
+  const locations = locationsQuery.data ?? [];
   const heroImageSrc = resolvePublicAssetPath('impressie.jpg');
-  const locationBlockTitle = locale === 'en' ? 'The Location' : 'De Locatie';
   const addressLabel = locale === 'en' ? 'Address' : 'Adres';
   const mapButtonLabel = locale === 'en' ? 'Google Maps' : 'Google Maps';
-  const address = 'Zeddamseweg 16, Kilder';
-  const googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=Zeddamseweg+16,+Kilder';
-  const openStreetMapEmbedUrl = 'https://www.openstreetmap.org/export/embed.html?bbox=6.231651%2C51.918968%2C6.251651%2C51.938968&layer=mapnik&marker=51.928968%2C6.241651';
+  const primaryAddress = locations[0]?.address ?? 'Zeddamseweg 16, Kilder';
   const configuredSiteUrl = import.meta.env.VITE_SITE_URL?.replace(/\/$/, '');
   const browserOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
   const siteUrl = configuredSiteUrl ?? browserOrigin;
@@ -76,8 +75,7 @@ export function HomePage() {
       ...(logoImageUrl ? { image: logoImageUrl } : {}),
       address: {
         '@type': 'PostalAddress',
-        streetAddress: address,
-        addressLocality: 'Kilder',
+        streetAddress: primaryAddress,
         addressRegion: 'Gelderland',
         addressCountry: 'NL',
       },
@@ -222,7 +220,7 @@ export function HomePage() {
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-2xl font-bold leading-none text-[#F0E7C9]">{formatCurrency(unit.pricePerNight, locale)}</p>
+                        <p className="text-2xl font-bold leading-none text-[#F0E7C9]">{formatCurrency(unitAvailability?.pricePerNight ?? unit.pricePerNight, locale)}</p>
                         <p className="mt-1 text-xs text-stone-400">{copy.perNight}</p>
                       </div>
                     </div>
@@ -267,36 +265,50 @@ export function HomePage() {
             </p>
           </article>
 
-          <article className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/15">
-            <div className="grid gap-0 lg:grid-cols-[0.95fr_1.25fr]">
-              <div className="flex flex-col justify-between gap-4 p-5 sm:p-6">
-                <div>
-                  <p className="text-xs text-[#D6CAA0]">{locationBlockTitle}</p>
-                  <p className="mt-4 text-sm font-semibold text-white">{addressLabel}</p>
-                  <p className="mt-2 text-sm leading-7 text-stone-300">{address}</p>
-                </div>
+          {locationsQuery.isLoading ? null : (
+            <div className="space-y-4">
+              {locations.map((location) => {
+                const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`;
+                const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(location.address)}&output=embed`;
 
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex w-fit items-center rounded-full border border-[#76BD23]/35 bg-[#1C5733]/20 px-4 py-2 text-sm font-semibold text-[#D9F0B6] transition hover:border-[#76BD23]/60 hover:bg-[#1C5733]/30 hover:text-white"
-                >
-                  {mapButtonLabel}
-                </a>
-              </div>
+                return (
+                  <article
+                    key={location.id}
+                    className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/15"
+                  >
+                    <div className="grid gap-0 lg:grid-cols-[0.95fr_1.25fr]">
+                      <div className="flex flex-col justify-between gap-4 p-5 sm:p-6">
+                        <div>
+                          <p className="text-xs text-[#D6CAA0]">{location.name}</p>
+                          <p className="mt-4 text-sm font-semibold text-white">{addressLabel}</p>
+                          <p className="mt-2 text-sm leading-7 text-stone-300">{location.address}</p>
+                        </div>
 
-              <div className="min-h-[280px] border-t border-white/10 lg:border-l lg:border-t-0">
-                <iframe
-                  title={`${locationBlockTitle} map`}
-                  src={openStreetMapEmbedUrl}
-                  className="h-full min-h-[280px] w-full"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
+                        <a
+                          href={googleMapsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex w-fit items-center rounded-full border border-[#76BD23]/35 bg-[#1C5733]/20 px-4 py-2 text-sm font-semibold text-[#D9F0B6] transition hover:border-[#76BD23]/60 hover:bg-[#1C5733]/30 hover:text-white"
+                        >
+                          {mapButtonLabel}
+                        </a>
+                      </div>
+
+                      <div className="min-h-[280px] border-t border-white/10 lg:border-l lg:border-t-0">
+                        <iframe
+                          title={`${location.name} map`}
+                          src={mapEmbedUrl}
+                          className="h-full min-h-[280px] w-full"
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                        />
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </article>
+          )}
 
           <div className="space-y-3">
             {locationHighlights.map((item, index) => {

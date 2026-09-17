@@ -27,7 +27,7 @@ type HomeCopy = {
 type BookingCopy = {
   seoTitle: string;
   seoDescription: string;
-  stepLabels: [string, string, string];
+  stepLabels: [string, string, string, string];
   pageTitle: string;
   successEyebrow: string;
   successTitle: string;
@@ -46,8 +46,13 @@ type BookingCopy = {
   availabilityLoading: string;
   availabilityLabel: (remaining: number) => string;
   unitTypeLabel: string;
-  step2Title: string;
-  step2Description: string;
+  locationStepTitle: string;
+  locationStepDescription: string;
+  chooseLocationLabel: string;
+  locationSelectedLabel: string;
+  selectedLocationLabel: string;
+  step3Title: string;
+  step3Description: string;
   labels: {
     guestName: string;
     guestEmail: string;
@@ -71,8 +76,8 @@ type BookingCopy = {
   };
   stayDurationLabel: string;
   stayDurationDescription: (checkIn: string, checkOut: string, nightLabel: string) => string;
-  step3Title: string;
-  step3Description: string;
+  step4Title: string;
+  step4Description: string;
   chosenUnit: string;
   totalAmount: string;
   contactPerson: string;
@@ -155,8 +160,8 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       seoTitle: 'Boek je woonunit | CrossVillage Zeddam',
       seoDescription:
         'Kies je unit, controleer de beschikbaarheid en vraag direct je verblijf aan voor CrossVillage Zeddam tijdens het EK Veldrijden van 5 t/m 9 november 2026.',
-      stepLabels: ['Unit', 'Gegevens', 'Betalen'],
-      pageTitle: 'Reserveer je woonunit in 3 stappen',
+      stepLabels: ['Unit', 'Locatie', 'Gegevens', 'Betalen'],
+      pageTitle: 'Reserveer je woonunit in 4 stappen',
       successEyebrow: 'Aanvraag ontvangen',
       successTitle: 'Je aanvraag staat klaar voor opvolging.',
       successMessage: (confirmationCode) => [
@@ -179,8 +184,14 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       availabilityLoading: 'Beschikbaarheid wordt geladen',
       availabilityLabel: (remaining) => `Nog ${remaining} beschikbaar`,
       unitTypeLabel: 'Type unit',
-      step2Title: '2. Vul je verblijfsgegevens in',
-      step2Description:
+      locationStepTitle: '2. Kies je locatie',
+      locationStepDescription:
+        'We hebben twee locaties in Zeddam. Kies de locatie waar je wilt verblijven.',
+      chooseLocationLabel: 'Kies deze locatie',
+      locationSelectedLabel: 'Geselecteerd',
+      selectedLocationLabel: 'Gekozen locatie',
+      step3Title: '3. Vul je verblijfsgegevens in',
+      step3Description:
         'Klaar voor een geweldig EK-weekend? Je boekt bij ons een speciaal 5-daags arrangement. Ongeacht aankomst en vertrekdatum betaalt u een vaste prijs voor het hele pakket.',
       labels: {
         guestName: 'Naam',
@@ -206,8 +217,8 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       stayDurationLabel: 'Verblijfsduur',
       stayDurationDescription: (checkIn, checkOut, nightLabel) =>
         `Bij aankomst op ${checkIn} en vertrek op ${checkOut} verblijf je ${nightLabel}.`,
-      step3Title: '3.  Controleer en verstuur',
-      step3Description:
+      step4Title: '4. Controleer en verstuur',
+      step4Description:
         'Na je bevestiging ontvangen wij jouw aanvraag. Wij nemen vervolgens via e-mail persoonlijk contact met je op om de boeking door te nemen en de betaalinstructies te delen. Zodra de betaling via bankoverschrijving is afgerond, is jouw warme EK-basis definitief gereserveerd.',
       chosenUnit: 'Gekozen unit',
       totalAmount: 'Totaalbedrag',
@@ -336,8 +347,8 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       seoTitle: 'Book your accommodation unit | CrossVillage Zeddam',
       seoDescription:
         'Choose your accommodation unit, check live availability and submit your stay request for CrossVillage Zeddam during the European Cyclo-cross Championships from 5 to 9 November 2026.',
-      stepLabels: ['Unit', 'Details', 'Payment'],
-      pageTitle: 'Reserve your warm championship base in 3 steps',
+      stepLabels: ['Unit', 'Location', 'Details', 'Payment'],
+      pageTitle: 'Reserve your warm championship base in 4 steps',
       successEyebrow: 'Request received',
       successTitle: 'Your request is ready for follow-up.',
       successMessage: (confirmationCode) => [
@@ -360,8 +371,14 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       availabilityLoading: 'Loading availability',
       availabilityLabel: (remaining) => `${remaining} still available`,
       unitTypeLabel: 'Unit type',
-      step2Title: '2. Enter your stay details',
-      step2Description:
+      locationStepTitle: '2. Choose your location',
+      locationStepDescription:
+        'We have two locations in Zeddam. Choose the location where you want to stay.',
+      chooseLocationLabel: 'Choose this location',
+      locationSelectedLabel: 'Selected',
+      selectedLocationLabel: 'Selected location',
+      step3Title: '3. Enter your stay details',
+      step3Description:
         'Fill in your contact and stay details. Arrival is possible from Thursday 5 November through Monday 9 November, departure from Friday 6 November through Tuesday 10 November.',
       labels: {
         guestName: 'Name',
@@ -387,8 +404,8 @@ export const siteCopy: Record<Locale, SiteCopy> = {
       stayDurationLabel: 'Length of stay',
       stayDurationDescription: (checkIn, checkOut, nightLabel) =>
         `With arrival on ${checkIn} and departure on ${checkOut}, your stay lasts ${nightLabel}.`,
-      step3Title: '3. Review and submit',
-      step3Description:
+      step4Title: '4. Review and submit',
+      step4Description:
         'After confirmation you will receive payment instructions for bank transfer. The reservation only becomes final after the payment has been received.',
       chosenUnit: 'Selected unit',
       totalAmount: 'Total amount',

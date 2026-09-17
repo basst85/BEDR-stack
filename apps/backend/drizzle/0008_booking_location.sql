@@ -1,0 +1,1 @@
+ALTER TABLE `booking_requests` ADD `location_id` text DEFAULT 'crossvillage' NOT NULL;

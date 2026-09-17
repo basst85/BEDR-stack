@@ -10,6 +10,7 @@ type BookingEmailLine = {
 type SendBookingConfirmationEmailParams = {
   requestGroupId: string;
   confirmationCode: string;
+  locationName: string;
   guestName: string;
   guestEmail: string;
   guestPhone: string;
@@ -17,6 +18,7 @@ type SendBookingConfirmationEmailParams = {
   checkOut: string;
   notes?: string;
   lines: BookingEmailLine[];
+  unitPrices: Record<UnitTypeValue, number>;
 };
 
 export type BookingEmailLogEntry = {
@@ -82,15 +84,6 @@ const unitCatalog: Record<UnitTypeValue, string> = {
   cabine: '2 persoons compartiment in 8 persoons slaapwagen',
 };
 
-const unitPricePerNightCatalog: Record<UnitTypeValue, number> = {
-  '420': 150,
-  '660': 170,
-  '730': 300,
-  '733': 320,
-  '900': 400,
-  cabine: 90,
-};
-
 const escapeHtml = (value: string) =>
   value
     .replaceAll('&', '&amp;')
@@ -133,7 +126,7 @@ const buildBookingLinesText = (lines: BookingEmailLine[]) =>
 const buildEmailContent = (params: SendBookingConfirmationEmailParams) => {
   const nightCount = calculateNightCount(params.checkIn, params.checkOut);
   const totalAmount = params.lines.reduce(
-    (sum, line) => sum + unitPricePerNightCatalog[line.unitType] * line.quantity * nightCount,
+    (sum, line) => sum + params.unitPrices[line.unitType] * line.quantity * nightCount,
     0,
   );
   const depositAmount = totalAmount / 2;
@@ -166,6 +159,7 @@ const buildEmailContent = (params: SendBookingConfirmationEmailParams) => {
       </ul>
       <p><strong>Jouw boekingsgegevens</strong></p>
       <p>Boekingsnummer: ${escapeHtml(params.confirmationCode)}</p>
+      <p>Locatie: ${escapeHtml(params.locationName)}</p>
       <p>Gekozen woonunit(s):</p>
       <ul>${bookingLinesHtml}</ul>
       <p>Verblijfsperiode: ${escapeHtml(formatDate(params.checkIn))} t/m ${escapeHtml(formatDate(params.checkOut))}</p>
@@ -197,6 +191,7 @@ Betaaltermijn: Graag overmaken binnen 7 dagen na ontvangst van deze mail.
 
 Jouw boekingsgegevens
 Boekingsnummer: ${params.confirmationCode}
+Locatie: ${params.locationName}
 Gekozen woonunit(s):
 ${bookingLinesText}
 Verblijfsperiode: ${formatDate(params.checkIn)} t/m ${formatDate(params.checkOut)}

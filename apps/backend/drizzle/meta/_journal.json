@@ -43,6 +43,27 @@
       "when": 1780830000000,
       "tag": "0005_archived_received_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1789671690295,
+      "tag": "0006_unit_price",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1789673649177,
+      "tag": "0007_locations",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1789674364120,
+      "tag": "0008_booking_location",
+      "breakpoints": true
     }
   ]
 }

@@ -43,7 +43,7 @@ const copyByLocale: Record<Locale, Copy> = {
     },
     nav: {
       units: 'Units',
-      location: 'Locatie',
+      location: 'Locaties',
       faq: 'FAQ',
       about: 'Over ons',
       terms: 'Voorwaarden',
@@ -61,7 +61,7 @@ const copyByLocale: Record<Locale, Copy> = {
     },
     nav: {
       units: 'Units',
-      location: 'Location',
+      location: 'Locations',
       faq: 'FAQ',
       about: 'About us',
       terms: 'Terms',

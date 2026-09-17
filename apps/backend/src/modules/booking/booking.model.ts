@@ -14,6 +14,7 @@ export const bookingRequestsTable = sqliteTable('booking_requests', {
   id: text('id').primaryKey(),
   requestGroupId: text('request_group_id').notNull(),
   confirmationCode: text('confirmation_code'),
+  locationId: text('location_id').notNull().default('crossvillage'),
   unitType: text('unit_type').notNull(),
   quantity: integer('quantity').notNull(),
   guestName: text('guest_name').notNull(),
@@ -60,12 +61,21 @@ export const unitStockTable = sqliteTable('unit_stock', {
     .$defaultFn(() => new Date()),
 });
 
+export const unitPriceTable = sqliteTable('unit_price', {
+  unitType: text('unit_type').primaryKey(),
+  pricePerNight: integer('price_per_night').notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const bookingRequestLinePayload = t.Object({
   unitType: t.String({ minLength: 1 }),
   quantity: t.Integer({ minimum: 1, maximum: 999 }),
 });
 
 export const bookingRequestPayload = t.Object({
+  locationId: t.String({ minLength: 1 }),
   lines: t.Array(bookingRequestLinePayload, { minItems: 1, maxItems: unitTypeValues.length }),
   guestName: t.String({ minLength: 2 }),
   guestEmail: t.String({ format: 'email' }),
@@ -79,6 +89,7 @@ export const bookingAvailabilityDto = t.Object({
   unitType: t.String(),
   title: t.String(),
   remaining: t.Integer(),
+  pricePerNight: t.Integer(),
 });
 
 export const bookingConfirmationDto = t.Object({

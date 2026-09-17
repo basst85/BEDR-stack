@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   CalendarRange,
   Check,
   CheckCircle2,
+  Euro,
   House,
   KeyRound,
   Lock,
   LogOut,
+  MapPin,
   Minus,
   Plus,
   RefreshCw,
@@ -27,6 +29,8 @@ import {
   deleteBmsBooking,
   fetchBmsBookingEmails,
   fetchBmsBookings,
+  fetchBmsLocations,
+  fetchBmsPrices,
   fetchBmsReceivedEmails,
   cancelBmsBooking,
   fetchBmsSession,
@@ -34,11 +38,15 @@ import {
   loginBms,
   logoutBms,
   respondToBmsReceivedEmail,
+  updateBmsLocation,
+  updateBmsPrice,
   updateBmsStock,
   type BmsBookingItem,
   type BmsBookingEmailLogItem,
+  type BmsPriceItem,
   type BmsReceivedEmailItem,
   type BmsStockItem,
+  type LocationItem,
 } from '@/lib/api';
 
 type GroupedBooking = {
@@ -80,15 +88,42 @@ export function BmsAdminPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'stocks' | 'bookings' | 'received-emails'>('stocks');
+  const [activeTab, setActiveTab] = useState<'stocks' | 'prices' | 'locations' | 'bookings' | 'received-emails'>('stocks');
   const [searchQuery, setSearchQuery] = useState('');
   const [localStocks, setLocalStocks] = useState<Record<string, number>>({});
+  const [localPrices, setLocalPrices] = useState<Record<string, number>>({});
+  const [localLocations, setLocalLocations] = useState<Record<string, { name: string; address: string }>>({});
   const [statusFilters, setStatusFilters] = useState<Record<BookingStatusFilter, boolean>>({
     pending: true,
     approved: true,
     cancelled: false,
   });
   const [composerState, setComposerState] = useState<ReceivedEmailComposerState | null>(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastPosition, setToastPosition] = useState<{ top: number; left: number } | null>(null);
+  const toastRef = useRef<HTMLDivElement>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSaveButtonRef = useRef<HTMLElement | null>(null);
+
+  const showToast = (message: string) => {
+    const anchorRect = lastSaveButtonRef.current?.getBoundingClientRect();
+
+    setToastMessage(message);
+    setToastPosition(
+      anchorRect
+        ? { top: anchorRect.top - 12, left: anchorRect.right }
+        : null,
+    );
+    toastRef.current?.showPopover();
+
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    toastTimeoutRef.current = setTimeout(() => {
+      toastRef.current?.hidePopover();
+    }, 2500);
+  };
 
   // Query: BMS Session
   const sessionQuery = useQuery<{ authenticated: boolean; user?: string }>({
@@ -101,6 +136,20 @@ export function BmsAdminPage() {
   const stocksQuery = useQuery<BmsStockItem[]>({
     queryKey: ['bms-stocks'],
     queryFn: fetchBmsStocks,
+    enabled: !!sessionQuery.data?.authenticated,
+  });
+
+  // Query: BMS Prices
+  const pricesQuery = useQuery<BmsPriceItem[]>({
+    queryKey: ['bms-prices'],
+    queryFn: fetchBmsPrices,
+    enabled: !!sessionQuery.data?.authenticated,
+  });
+
+  // Query: BMS Locations
+  const locationsQuery = useQuery<LocationItem[]>({
+    queryKey: ['bms-locations'],
+    queryFn: fetchBmsLocations,
     enabled: !!sessionQuery.data?.authenticated,
   });
 
@@ -150,6 +199,27 @@ export function BmsAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bms-stocks'] });
       queryClient.invalidateQueries({ queryKey: ['booking-availability'] });
+      showToast('Wijzigingen opgeslagen');
+    },
+  });
+
+  // Mutation: Update Price
+  const updatePriceMutation = useMutation({
+    mutationFn: updateBmsPrice,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bms-prices'] });
+      queryClient.invalidateQueries({ queryKey: ['booking-availability'] });
+      showToast('Wijzigingen opgeslagen');
+    },
+  });
+
+  // Mutation: Update Location
+  const updateLocationMutation = useMutation({
+    mutationFn: updateBmsLocation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bms-locations'] });
+      queryClient.invalidateQueries({ queryKey: ['locations'] });
+      showToast('Wijzigingen opgeslagen');
     },
   });
 
@@ -232,6 +302,28 @@ export function BmsAdminPage() {
     }
   }, [stocksQuery.data]);
 
+  // Sync prices list once loaded
+  React.useEffect(() => {
+    if (pricesQuery.data) {
+      const initial: Record<string, number> = {};
+      pricesQuery.data.forEach((item) => {
+        initial[item.unitType] = item.price;
+      });
+      setLocalPrices(initial);
+    }
+  }, [pricesQuery.data]);
+
+  // Sync locations list once loaded
+  React.useEffect(() => {
+    if (locationsQuery.data) {
+      const initial: Record<string, { name: string; address: string }> = {};
+      locationsQuery.data.forEach((item) => {
+        initial[item.id] = { name: item.name, address: item.address };
+      });
+      setLocalLocations(initial);
+    }
+  }, [locationsQuery.data]);
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password) {
@@ -253,10 +345,46 @@ export function BmsAdminPage() {
     }));
   };
 
-  const handleSaveStock = (unitType: string) => {
+  const handleSaveStock = (unitType: string, anchor: HTMLElement) => {
     const stock = localStocks[unitType];
     if (stock !== undefined) {
+      lastSaveButtonRef.current = anchor;
       updateStockMutation.mutate({ unitType, stock });
+    }
+  };
+
+  const handlePriceChange = (unitType: string, val: number) => {
+    const nextVal = Math.max(0, val);
+    setLocalPrices((prev) => ({
+      ...prev,
+      [unitType]: nextVal,
+    }));
+  };
+
+  const handleSavePrice = (unitType: string, anchor: HTMLElement) => {
+    const price = localPrices[unitType];
+    if (price !== undefined) {
+      lastSaveButtonRef.current = anchor;
+      updatePriceMutation.mutate({ unitType, price });
+    }
+  };
+
+  const handleLocationFieldChange = (id: string, field: 'name' | 'address', value: string) => {
+    setLocalLocations((prev) => ({
+      ...prev,
+      [id]: {
+        name: prev[id]?.name ?? '',
+        address: prev[id]?.address ?? '',
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSaveLocation = (id: string, anchor: HTMLElement) => {
+    const location = localLocations[id];
+    if (location && location.name.trim() && location.address.trim()) {
+      lastSaveButtonRef.current = anchor;
+      updateLocationMutation.mutate({ id, name: location.name.trim(), address: location.address.trim() });
     }
   };
 
@@ -567,6 +695,28 @@ export function BmsAdminPage() {
           Voorraad & Beschikbaarheid
         </button>
         <button
+          onClick={() => setActiveTab('prices')}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition border-b-2 ${
+            activeTab === 'prices'
+              ? 'border-[#76BD23] text-white'
+              : 'border-transparent text-stone-400 hover:text-white'
+          }`}
+        >
+          <Euro className="size-4" />
+          Prijzen
+        </button>
+        <button
+          onClick={() => setActiveTab('locations')}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition border-b-2 ${
+            activeTab === 'locations'
+              ? 'border-[#76BD23] text-white'
+              : 'border-transparent text-stone-400 hover:text-white'
+          }`}
+        >
+          <MapPin className="size-4" />
+          Locaties
+        </button>
+        <button
           onClick={() => setActiveTab('bookings')}
           className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold transition border-b-2 ${
             activeTab === 'bookings'
@@ -695,7 +845,7 @@ export function BmsAdminPage() {
                       <div className="flex items-center gap-2">
                         {hasChanged && (
                           <Button
-                            onClick={() => handleSaveStock(stockItem.unitType)}
+                            onClick={(e) => handleSaveStock(stockItem.unitType, e.currentTarget)}
                             disabled={isSaving}
                             className="rounded-full bg-[#76BD23] px-4 font-semibold text-[#10311c] hover:bg-[#6eb220]"
                           >
@@ -708,6 +858,172 @@ export function BmsAdminPage() {
                           </Button>
                         )}
                       </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Prices Tab Panel */}
+      {activeTab === 'prices' && (
+        <div className="space-y-4">
+          {pricesQuery.isLoading ? (
+            <div className="flex py-12 items-center justify-center">
+              <RefreshCw className="size-6 animate-spin text-[#76BD23]" />
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {pricesQuery.data?.map((priceItem) => {
+                const localVal = localPrices[priceItem.unitType] ?? priceItem.price;
+                const hasChanged = localVal !== priceItem.price;
+                const isSaving =
+                  updatePriceMutation.isPending &&
+                  updatePriceMutation.variables?.unitType === priceItem.unitType;
+
+                return (
+                  <div
+                    key={priceItem.unitType}
+                    className="border-border bg-card/60 flex flex-col justify-between rounded-[1.5rem] border p-5 transition hover:border-white/15 hover:bg-card/75"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-white leading-tight">
+                            {priceItem.title}
+                          </h3>
+                          <p className="text-xs text-stone-400 mt-1">Code: {priceItem.unitType}</p>
+                        </div>
+                        <Badge
+                          className={`rounded-full px-2.5 py-0.5 border ${
+                            priceItem.isOverridden
+                              ? 'bg-[#1C5733]/20 border-[#76BD23]/30 text-[#D9F0B6]'
+                              : 'bg-black/20 border-white/10 text-stone-400'
+                          }`}
+                        >
+                          {priceItem.isOverridden ? 'Aangepast' : 'Standaard'}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl bg-black/15 border border-white/6 p-3 text-center text-xs">
+                        <p className="text-stone-400 font-medium">Prijs per nacht</p>
+                        <p className="mt-0.5 text-base font-bold text-white">
+                          &euro; {priceItem.price}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 border-t border-white/6 pt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handlePriceChange(priceItem.unitType, localVal - 5)}
+                          className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/10 text-stone-300 hover:border-[#76BD23]/40 hover:bg-[#1C5733]/15 hover:text-white"
+                        >
+                          <Minus className="size-4" />
+                        </button>
+                        <Input
+                          type="number"
+                          value={localVal}
+                          onChange={(e) =>
+                            handlePriceChange(priceItem.unitType, parseInt(e.target.value) || 0)
+                          }
+                          className="w-20 text-center rounded-xl bg-black/20 border-white/10 text-white font-semibold focus-visible:ring-[#76BD23]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handlePriceChange(priceItem.unitType, localVal + 5)}
+                          className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/10 text-stone-300 hover:border-[#76BD23]/40 hover:bg-[#1C5733]/15 hover:text-white"
+                        >
+                          <Plus className="size-4" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {hasChanged && (
+                          <Button
+                            onClick={(e) => handleSavePrice(priceItem.unitType, e.currentTarget)}
+                            disabled={isSaving}
+                            className="rounded-full bg-[#76BD23] px-4 font-semibold text-[#10311c] hover:bg-[#6eb220]"
+                          >
+                            {isSaving ? (
+                              <RefreshCw className="size-4 animate-spin mr-1.5" />
+                            ) : (
+                              <CheckCircle2 className="size-4 mr-1.5" />
+                            )}
+                            Opslaan
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Locations Tab Panel */}
+      {activeTab === 'locations' && (
+        <div className="space-y-4">
+          {locationsQuery.isLoading ? (
+            <div className="flex py-12 items-center justify-center">
+              <RefreshCw className="size-6 animate-spin text-[#76BD23]" />
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {locationsQuery.data?.map((location) => {
+                const localValue = localLocations[location.id] ?? { name: location.name, address: location.address };
+                const hasChanged =
+                  localValue.name !== location.name || localValue.address !== location.address;
+                const isSaving =
+                  updateLocationMutation.isPending &&
+                  updateLocationMutation.variables?.id === location.id;
+
+                return (
+                  <div
+                    key={location.id}
+                    className="border-border bg-card/60 flex flex-col justify-between rounded-[1.5rem] border p-5 transition hover:border-white/15 hover:bg-card/75"
+                  >
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-stone-400 font-medium text-xs">Naam</Label>
+                        <Input
+                          type="text"
+                          value={localValue.name}
+                          onChange={(e) => handleLocationFieldChange(location.id, 'name', e.target.value)}
+                          className="mt-1 rounded-xl bg-black/20 border-white/10 text-white font-semibold focus-visible:ring-[#76BD23]"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-stone-400 font-medium text-xs">Adres</Label>
+                        <Input
+                          type="text"
+                          value={localValue.address}
+                          onChange={(e) => handleLocationFieldChange(location.id, 'address', e.target.value)}
+                          className="mt-1 rounded-xl bg-black/20 border-white/10 text-white focus-visible:ring-[#76BD23]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-5 border-t border-white/6 pt-4 flex items-center justify-end">
+                      {hasChanged && (
+                        <Button
+                          onClick={(e) => handleSaveLocation(location.id, e.currentTarget)}
+                          disabled={isSaving || !localValue.name.trim() || !localValue.address.trim()}
+                          className="rounded-full bg-[#76BD23] px-4 font-semibold text-[#10311c] hover:bg-[#6eb220]"
+                        >
+                          {isSaving ? (
+                            <RefreshCw className="size-4 animate-spin mr-1.5" />
+                          ) : (
+                            <CheckCircle2 className="size-4 mr-1.5" />
+                          )}
+                          Opslaan
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
@@ -1288,6 +1604,20 @@ export function BmsAdminPage() {
           </div>
         </div>
       ) : null}
+
+      <div
+        ref={toastRef}
+        popover="manual"
+        className="bms-toast"
+        style={
+          toastPosition
+            ? { top: `${toastPosition.top}px`, left: `${toastPosition.left}px`, bottom: 'auto', right: 'auto' }
+            : undefined
+        }
+      >
+        <CheckCircle2 className="size-4 text-[#76BD23]" />
+        {toastMessage}
+      </div>
     </div>
   );
 }

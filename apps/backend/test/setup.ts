@@ -38,6 +38,7 @@ sqlite.exec(`
     id TEXT PRIMARY KEY NOT NULL,
     request_group_id TEXT NOT NULL,
     confirmation_code TEXT,
+    location_id TEXT NOT NULL DEFAULT 'crossvillage',
     unit_type TEXT NOT NULL,
     quantity INTEGER NOT NULL,
     guest_name TEXT NOT NULL,
@@ -63,6 +64,30 @@ sqlite.exec(`
     stock INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   );
+`);
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS unit_price (
+    unit_type TEXT PRIMARY KEY NOT NULL,
+    price_per_night INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+`);
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS locations (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL
+  );
+`);
+
+sqlite.exec(`
+  INSERT OR IGNORE INTO locations (id, name, address, sort_order, updated_at) VALUES
+    ('crossvillage', 'CrossVillage Zeddam', 'Zeddamseweg 16, Kilder', 0, ${Date.now()}),
+    ('totalrent', 'Totalrent', 'Stirlingstraat 5, 7037 DG Beek Gem Montferland', 1, ${Date.now()});
 `);
 
 sqlite.exec(`
@@ -93,6 +118,7 @@ beforeEach(() => {
   sqlite.exec('DELETE FROM users;');
   sqlite.exec('DELETE FROM booking_requests;');
   sqlite.exec('DELETE FROM unit_stock;');
+  sqlite.exec('DELETE FROM unit_price;');
   sqlite.exec('DELETE FROM booking_email_logs;');
   sqlite.exec('DELETE FROM archived_received_emails;');
 });

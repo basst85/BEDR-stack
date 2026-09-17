@@ -109,3 +109,40 @@
     color: white;
   }
 }
+
+[popover].bms-toast {
+  position: fixed;
+  inset: auto auto 1.5rem 1.5rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(118, 189, 35, 0.35);
+  background: oklch(0.3 0.014 220);
+  color: #f0e7c9;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translate(-100%, -100%) translateY(0.5rem);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    overlay 0.2s ease allow-discrete,
+    display 0.2s ease allow-discrete;
+}
+
+[popover].bms-toast:popover-open {
+  opacity: 1;
+  transform: translate(-100%, -100%) translateY(0);
+}
+
+@starting-style {
+  [popover].bms-toast:popover-open {
+    opacity: 0;
+    transform: translate(-100%, -100%) translateY(0.5rem);
+  }
+}

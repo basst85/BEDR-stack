@@ -1,11 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, CalendarDays, Check, LoaderCircle, Mail, Phone, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarDays, Check, LoaderCircle, Mail, MapPin, Phone, Users } from 'lucide-react';
 import { getCountries, getCountryCallingCode, type CountryCode } from 'libphonenumber-js';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import {
   bookingAvailabilityQueryOptions,
+  locationsQueryOptions,
   queryKeys,
   submitBookingRequest,
   type BookingRequestPayload,
@@ -314,16 +315,17 @@ function SelectedUnitsSummary({
 export function BookingPage() {
   const { locale, localizePath } = useI18n();
   const copy = siteCopy[locale].booking;
-  const unitTypes = getUnitTypes(locale);
+  const staticUnitTypes = getUnitTypes(locale);
   const [searchParams] = useSearchParams();
   const requestedUnit = searchParams.get('unit');
   const bookingSectionRef = useRef<HTMLElement | null>(null);
-  const initialUnitId = unitTypes.some((unit) => unit.id === requestedUnit) ? requestedUnit! : null;
+  const initialUnitId = staticUnitTypes.some((unit) => unit.id === requestedUnit) ? requestedUnit! : null;
 
   const [step, setStep] = useState(1);
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>(() =>
-    Object.fromEntries(unitTypes.map((unit) => [unit.id, unit.id === initialUnitId ? 1 : 0])),
+    Object.fromEntries(staticUnitTypes.map((unit) => [unit.id, unit.id === initialUnitId ? 1 : 0])),
   );
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [guestPhoneCountryCode, setGuestPhoneCountryCode] = useState<CountryCode>('NL');
   const [formData, setFormData] = useState({
@@ -337,10 +339,21 @@ export function BookingPage() {
 
   const queryClient = useQueryClient();
   const availabilityQuery = useQuery(bookingAvailabilityQueryOptions());
+  const locationsQuery = useQuery(locationsQueryOptions());
+  const locations = locationsQuery.data ?? [];
+  const selectedLocation = locations.find((location) => location.id === selectedLocationId) ?? null;
 
   const availabilityByUnitId = useMemo(
     () => new Map((availabilityQuery.data ?? []).map((item) => [item.unitType, item])),
     [availabilityQuery.data],
+  );
+  const unitTypes = useMemo(
+    () =>
+      staticUnitTypes.map((unit) => ({
+        ...unit,
+        pricePerNight: availabilityByUnitId.get(unit.id)?.pricePerNight ?? unit.pricePerNight,
+      })),
+    [availabilityByUnitId, staticUnitTypes],
   );
   const phoneCountryOptions = useMemo(() => getPhoneCountryOptions(locale), [locale]);
   const pricedNightCount = getNightCount(earliestCheckIn, defaultCheckOut);
@@ -419,6 +432,8 @@ export function BookingPage() {
     },
   });
 
+  const isLocationStepValid = selectedLocationId !== null;
+
   const isDetailsStepValid =
     formData.guestName.trim().length >= 2 &&
     hasValidGuestEmail &&
@@ -428,7 +443,12 @@ export function BookingPage() {
     nightCount > 0;
 
   const submitReservation = async () => {
+    if (!selectedLocationId) {
+      return;
+    }
+
     await mutation.mutateAsync({
+      locationId: selectedLocationId,
       lines: selectedUnits.map((line) => ({
         unitType: line.unit.id,
         quantity: line.quantity,
@@ -658,9 +678,62 @@ export function BookingPage() {
               {step === 2 ? (
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-semibold text-white">{copy.step2Title}</h2>
+                    <h2 className="text-2xl font-semibold text-white">{copy.locationStepTitle}</h2>
                     <p className="text-sm leading-7 text-stone-300">
-                      {copy.step2Description}
+                      {copy.locationStepDescription}
+                    </p>
+                  </div>
+
+                  {locationsQuery.isLoading ? null : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {locations.map((location) => {
+                        const isSelected = location.id === selectedLocationId;
+
+                        return (
+                          <button
+                            key={location.id}
+                            type="button"
+                            onClick={() => setSelectedLocationId(location.id)}
+                            className={`flex flex-col items-start gap-3 rounded-[1.5rem] border p-5 text-left transition ${
+                              isSelected
+                                ? 'border-[#76BD23]/60 bg-[#1C5733]/25'
+                                : 'border-white/10 bg-black/15 hover:border-[#76BD23]/30 hover:bg-[#1C5733]/12'
+                            }`}
+                          >
+                            <div className="flex w-full items-start justify-between gap-3">
+                              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1C5733]/30 text-[#76BD23]">
+                                <MapPin className="size-5" />
+                              </span>
+                              {isSelected ? (
+                                <span className="flex items-center gap-1.5 rounded-full border border-[#76BD23]/45 bg-[#1C5733]/30 px-3 py-1 text-xs font-semibold text-[#D9F0B6]">
+                                  <Check className="size-3.5" />
+                                  {copy.locationSelectedLabel}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div>
+                              <p className="text-lg font-semibold text-white">{location.name}</p>
+                              <p className="mt-1 text-sm leading-6 text-stone-300">{location.address}</p>
+                            </div>
+                            {!isSelected ? (
+                              <span className="mt-1 text-sm font-semibold text-[#D6CAA0]">
+                                {copy.chooseLocationLabel}
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {step === 3 ? (
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-semibold text-white">{copy.step3Title}</h2>
+                    <p className="text-sm leading-7 text-stone-300">
+                      {copy.step3Description}
                     </p>
                   </div>
 
@@ -789,12 +862,12 @@ export function BookingPage() {
                 </div>
               ) : null}
 
-              {step === 3 ? (
+              {step === 4 ? (
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-semibold text-white">{copy.step3Title}</h2>
+                    <h2 className="text-2xl font-semibold text-white">{copy.step4Title}</h2>
                     <p className="text-sm leading-7 text-stone-300">
-                      {copy.step3Description}
+                      {copy.step4Description}
                     </p>
                   </div>
 
@@ -810,6 +883,16 @@ export function BookingPage() {
                       />
 
                       <div className="mt-4 space-y-3 text-sm text-stone-300">
+                        {selectedLocation ? (
+                          <div className="flex items-start gap-3 rounded-2xl border border-white/8 bg-black/20 p-4">
+                            <MapPin className="mt-0.5 size-5 shrink-0 text-[#D6CAA0]" />
+                            <div>
+                              <p className="font-medium text-white">{selectedLocation.name}</p>
+                              <p className="mt-1 text-sm text-stone-300">{selectedLocation.address}</p>
+                            </div>
+                          </div>
+                        ) : null}
+
                         <div className="flex items-start gap-3 rounded-2xl border border-white/8 bg-black/20 p-4">
                           <CalendarDays className="mt-0.5 size-5 shrink-0 text-[#D6CAA0]" />
                           <div>
@@ -904,7 +987,7 @@ export function BookingPage() {
                   {copy.previous}
                 </Button>
 
-                {step < 3 ? (
+                {step < 4 ? (
                   <Button
                     type="button"
                     className="rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]"
@@ -912,7 +995,8 @@ export function BookingPage() {
                     disabled={
                       mutation.isPending ||
                       (step === 1 && (availabilityQuery.data === undefined || selectedUnitsCount === 0)) ||
-                      (step === 2 && !isDetailsStepValid)
+                      (step === 2 && !isLocationStepValid) ||
+                      (step === 3 && !isDetailsStepValid)
                     }
                   >
                     {copy.next}
@@ -923,7 +1007,13 @@ export function BookingPage() {
                     type="button"
                     className="rounded-full bg-[#76BD23] text-[#10311c] hover:bg-[#6eb220]"
                     onClick={submitReservation}
-                    disabled={mutation.isPending || !acceptedTerms || !isDetailsStepValid || selectedUnitsCount === 0}
+                    disabled={
+                      mutation.isPending ||
+                      !acceptedTerms ||
+                      !isLocationStepValid ||
+                      !isDetailsStepValid ||
+                      selectedUnitsCount === 0
+                    }
                   >
                     {mutation.isPending ? <LoaderCircle className="animate-spin" /> : null}
                     {copy.sendRequest}

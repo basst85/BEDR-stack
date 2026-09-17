@@ -6,6 +6,7 @@ import { authController } from './modules/auth/controller';
 import { bmsController } from './modules/booking/bms.controller';
 import { bookingController } from './modules/booking/controller';
 import { imagesController } from './modules/images/controller';
+import { locationsController } from './modules/locations/controller';
 import { usersController } from './modules/users/controller';
 
 export const app = new Elysia()
@@ -23,6 +24,7 @@ export const app = new Elysia()
       .use(usersController)
       .use(bookingController)
       .use(imagesController)
+      .use(locationsController)
       .use(bmsController),
   );
 

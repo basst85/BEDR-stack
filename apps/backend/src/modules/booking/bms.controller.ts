@@ -9,10 +9,14 @@ import {
   readBmsSessionToken,
 } from '@backend/core/session';
 
-import { unitStockTable, unitTypeValues, type UnitTypeValue } from './booking.model';
+import { locationUpdatePayload } from '@backend/modules/locations/locations.model';
+import { LocationsService } from '@backend/modules/locations/service';
+
+import { unitPriceTable, unitStockTable, unitTypeValues, type UnitTypeValue } from './booking.model';
 import { BookingService } from './service';
 
 const bookingService = new BookingService();
+const locationsService = new LocationsService();
 const jwtSecret = new TextEncoder().encode(config.jwtSecret);
 
 async function verifyBmsSession(cookieHeader?: string | null): Promise<boolean> {
@@ -524,6 +528,171 @@ export const bmsController = new Elysia({ prefix: '/bms' })
       detail: {
         tags: ['bms'],
         summary: 'Set total stock for a unit type',
+      },
+    },
+  )
+  .get(
+    '/prices',
+    async ({ request, set }) => {
+      const isValid = await verifyBmsSession(request.headers.get('cookie'));
+
+      if (!isValid) {
+        set.status = 401;
+        return {
+          message: 'Niet geautoriseerd.',
+        };
+      }
+
+      const availability = await bookingService.getAvailability();
+      const priceOverrides = await db.select().from(unitPriceTable);
+      const overridesMap = new Map(priceOverrides.map((row) => [row.unitType, row.pricePerNight]));
+
+      return availability.map((item) => {
+        const customPrice = overridesMap.get(item.unitType);
+        const defaultPrice = config.bookingPriceByUnitType[item.unitType as UnitTypeValue];
+
+        return {
+          unitType: item.unitType,
+          title: item.title,
+          defaultPrice,
+          customPrice: customPrice ?? null,
+          price: customPrice ?? defaultPrice,
+          isOverridden: customPrice !== undefined,
+        };
+      });
+    },
+    {
+      detail: {
+        tags: ['bms'],
+        summary: 'Retrieve all unit prices',
+      },
+    },
+  )
+  .post(
+    '/prices',
+    async ({ body, request, set }) => {
+      const isValid = await verifyBmsSession(request.headers.get('cookie'));
+
+      if (!isValid) {
+        set.status = 401;
+        return {
+          message: 'Niet geautoriseerd.',
+        };
+      }
+
+      const { unitType, price } = body;
+
+      if (!unitTypeValues.includes(unitType as UnitTypeValue)) {
+        set.status = 400;
+        return {
+          message: 'Ongeldige unit type.',
+        };
+      }
+
+      try {
+        await bookingService.updatePrice(unitType as UnitTypeValue, price);
+        return {
+          success: true,
+        };
+      } catch (error) {
+        set.status = 500;
+        return {
+          message: error instanceof Error ? error.message : 'Kon prijs niet bijwerken.',
+        };
+      }
+    },
+    {
+      body: t.Object({
+        unitType: t.String(),
+        price: t.Integer({ minimum: 0, maximum: 99999 }),
+      }),
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+        }),
+        400: t.Object({
+          message: t.String(),
+        }),
+        401: t.Object({
+          message: t.String(),
+        }),
+        500: t.Object({
+          message: t.String(),
+        }),
+      },
+      detail: {
+        tags: ['bms'],
+        summary: 'Set price per night for a unit type',
+      },
+    },
+  )
+  .get(
+    '/locations',
+    async ({ request, set }) => {
+      const isValid = await verifyBmsSession(request.headers.get('cookie'));
+
+      if (!isValid) {
+        set.status = 401;
+        return {
+          message: 'Niet geautoriseerd.',
+        };
+      }
+
+      return locationsService.getAll();
+    },
+    {
+      detail: {
+        tags: ['bms'],
+        summary: 'Retrieve all campsite locations',
+      },
+    },
+  )
+  .post(
+    '/locations/:id',
+    async ({ params, body, request, set }) => {
+      const isValid = await verifyBmsSession(request.headers.get('cookie'));
+
+      if (!isValid) {
+        set.status = 401;
+        return {
+          message: 'Niet geautoriseerd.',
+        };
+      }
+
+      try {
+        await locationsService.update(params.id, body);
+        return {
+          success: true,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Kon locatie niet bijwerken.';
+        set.status = message === 'Locatie niet gevonden.' ? 404 : 500;
+
+        return { message };
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String({ minLength: 1 }),
+      }),
+      body: locationUpdatePayload,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+        }),
+        401: t.Object({
+          message: t.String(),
+        }),
+        404: t.Object({
+          message: t.String(),
+        }),
+        500: t.Object({
+          message: t.String(),
+        }),
+      },
+      detail: {
+        tags: ['bms'],
+        summary: 'Update name and address for a campsite location',
       },
     },
   );

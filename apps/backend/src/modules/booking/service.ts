@@ -3,10 +3,13 @@ import { desc, eq, ne, sql } from 'drizzle-orm';
 import { config } from '@backend/core/config';
 import { db } from '@backend/core/db';
 
+import { locationsTable } from '@backend/modules/locations/locations.model';
+
 import {
   archivedReceivedEmailsTable,
   bookingEmailLogsTable,
   bookingRequestsTable,
+  unitPriceTable,
   unitStockTable,
   type BookingRequestPayload,
   type UnitTypeValue,
@@ -71,19 +74,34 @@ export class BookingService {
     const stockOverrides = await db.select().from(unitStockTable);
     const stockOverridesMap = new Map(stockOverrides.map((row) => [row.unitType, row.stock]));
 
+    const priceOverrides = await db.select().from(unitPriceTable);
+    const priceOverridesMap = new Map(priceOverrides.map((row) => [row.unitType, row.pricePerNight]));
+
     return unitTypeValues.map((unitType) => {
       const reserved = reservedMap.get(unitType) ?? 0;
       const stockLimit = stockOverridesMap.get(unitType) ?? config.bookingStockByUnitType[unitType];
+      const pricePerNight = priceOverridesMap.get(unitType) ?? config.bookingPriceByUnitType[unitType];
 
       return {
         unitType,
         title: unitCatalog[unitType].title,
         remaining: Math.max(stockLimit - reserved, 0),
+        pricePerNight,
       };
     });
   }
 
   async create(payload: BookingRequestPayload) {
+    const location = await db
+      .select({ id: locationsTable.id, name: locationsTable.name })
+      .from(locationsTable)
+      .where(eq(locationsTable.id, payload.locationId))
+      .get();
+
+    if (!location) {
+      throw new BookingInventoryError('Unknown location selected.');
+    }
+
     const groupedLines = new Map<UnitTypeValue, number>();
 
     for (const line of payload.lines) {
@@ -126,6 +144,7 @@ export class BookingService {
         id: crypto.randomUUID(),
         requestGroupId,
         confirmationCode,
+        locationId: payload.locationId,
         unitType,
         quantity,
         guestName: payload.guestName,
@@ -138,9 +157,14 @@ export class BookingService {
       })),
     );
 
+    const unitPrices = Object.fromEntries(
+      availability.map((item) => [item.unitType, item.pricePerNight]),
+    ) as Record<UnitTypeValue, number>;
+
     const emailLog = await sendBookingConfirmationEmail({
       requestGroupId,
       confirmationCode,
+      locationName: location.name,
       guestName: payload.guestName,
       guestEmail: payload.guestEmail,
       guestPhone: payload.guestPhone,
@@ -148,6 +172,7 @@ export class BookingService {
       checkOut: payload.checkOut,
       notes: payload.notes,
       lines: groupedBookingLines,
+      unitPrices,
     });
 
     await db.insert(bookingEmailLogsTable).values({
@@ -192,6 +217,27 @@ export class BookingService {
         target: unitStockTable.unitType,
         set: {
           stock,
+          updatedAt: new Date(),
+        },
+      });
+  }
+
+  async updatePrice(unitType: UnitTypeValue, pricePerNight: number) {
+    if (!validUnitTypes.has(unitType)) {
+      throw new Error('Unknown unit type selected.');
+    }
+
+    await db
+      .insert(unitPriceTable)
+      .values({
+        unitType,
+        pricePerNight,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: unitPriceTable.unitType,
+        set: {
+          pricePerNight,
           updatedAt: new Date(),
         },
       });

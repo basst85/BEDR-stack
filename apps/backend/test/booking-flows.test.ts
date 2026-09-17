@@ -48,6 +48,7 @@ describe('booking routes', () => {
       createJsonRequest(
         '/api/bookings',
         {
+          locationId: 'crossvillage',
           lines: [
             { unitType: '420', quantity: 1 },
             { unitType: '660', quantity: 2 },
@@ -95,6 +96,7 @@ describe('booking routes', () => {
       createJsonRequest(
         '/api/bookings',
         {
+          locationId: 'crossvillage',
           lines: [{ unitType: '420', quantity: 2 }],
           guestName: 'Grace Hopper',
           guestEmail: 'grace@example.com',

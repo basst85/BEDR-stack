@@ -44,6 +44,7 @@ export type BookingAvailabilityItem = {
   unitType: string;
   title: string;
   remaining: number;
+  pricePerNight: number;
 };
 
 export type BookingRequestLinePayload = {
@@ -52,6 +53,7 @@ export type BookingRequestLinePayload = {
 };
 
 export type BookingRequestPayload = {
+  locationId: string;
   lines: BookingRequestLinePayload[];
   guestName: string;
   guestEmail: string;
@@ -81,6 +83,7 @@ export type BmsBookingItem = {
   id: string;
   requestGroupId: string;
   confirmationCode: string | null;
+  locationId: string;
   unitType: string;
   quantity: number;
   guestName: string;
@@ -143,6 +146,21 @@ export type BmsStockItem = {
   isOverridden: boolean;
 };
 
+export type BmsPriceItem = {
+  unitType: string;
+  title: string;
+  defaultPrice: number;
+  customPrice: number | null;
+  price: number;
+  isOverridden: boolean;
+};
+
+export type LocationItem = {
+  id: string;
+  name: string;
+  address: string;
+};
+
 export type BmsLoginPayload = {
   username: string;
   password: string;
@@ -175,6 +193,7 @@ export const queryKeys = {
   session: () => ['session'] as const,
   users: () => ['users'] as const,
   bookingAvailability: () => ['booking-availability'] as const,
+  locations: () => ['locations'] as const,
 };
 
 export const registerUser = async (payload: RegisterPayload): Promise<UserItem> => {
@@ -291,6 +310,23 @@ export const bookingAvailabilityQueryOptions = () =>
   queryOptions({
     queryKey: queryKeys.bookingAvailability(),
     queryFn: fetchBookingAvailability,
+    retry: false,
+  });
+
+export const fetchLocations = async (): Promise<LocationItem[]> => {
+  const response = await fetch(`${apiBaseUrl}/api/locations`);
+
+  if (!response.ok) {
+    return throwApiError(response, 'Could not load the locations.');
+  }
+
+  return parseJson<LocationItem[]>(response);
+};
+
+export const locationsQueryOptions = () =>
+  queryOptions({
+    queryKey: queryKeys.locations(),
+    queryFn: fetchLocations,
     retry: false,
   });
 
@@ -460,5 +496,63 @@ export const updateBmsStock = async (payload: { unitType: string; stock: number 
 
   if (!response.ok) {
     return throwApiError(response, 'Kon de voorraad niet bijwerken.');
+  }
+};
+
+export const fetchBmsPrices = async (): Promise<BmsPriceItem[]> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/prices`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de prijzen niet laden.');
+  }
+
+  return parseJson<BmsPriceItem[]>(response);
+};
+
+export const updateBmsPrice = async (payload: { unitType: string; price: number }): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/prices`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de prijs niet bijwerken.');
+  }
+};
+
+export const fetchBmsLocations = async (): Promise<LocationItem[]> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/locations`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de locaties niet laden.');
+  }
+
+  return parseJson<LocationItem[]>(response);
+};
+
+export const updateBmsLocation = async (payload: {
+  id: string;
+  name: string;
+  address: string;
+}): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}/api/bms/locations/${payload.id}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ name: payload.name, address: payload.address }),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response, 'Kon de locatie niet bijwerken.');
   }
 };

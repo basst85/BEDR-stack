@@ -149,6 +149,31 @@ const bookingStockByUnitType = Object.fromEntries(
   ]),
 ) as Record<UnitTypeValue, number>;
 
+const bookingPriceEnvByUnitType: Record<UnitTypeValue, string> = {
+  '420': 'BOOKING_PRICE_420',
+  '660': 'BOOKING_PRICE_660',
+  '730': 'BOOKING_PRICE_730',
+  '733': 'BOOKING_PRICE_733',
+  '900': 'BOOKING_PRICE_900',
+  cabine: 'BOOKING_PRICE_CABINE',
+};
+
+const bookingDefaultPriceByUnitType: Record<UnitTypeValue, number> = {
+  '420': 150,
+  '660': 170,
+  '730': 300,
+  '733': 320,
+  '900': 400,
+  cabine: 90,
+};
+
+const bookingPriceByUnitType = Object.fromEntries(
+  unitTypeValues.map((unitType) => [
+    unitType,
+    parseNonNegativeIntegerEnv(bookingPriceEnvByUnitType[unitType], bookingDefaultPriceByUnitType[unitType]),
+  ]),
+) as Record<UnitTypeValue, number>;
+
 export const isAllowedCorsOrigin = (origin: string | null) => {
   if (!origin) {
     return false;
@@ -177,6 +202,7 @@ export const config = {
   jwtSecret: resolveJwtSecret(),
   databaseUrl: getEnv('DATABASE_URL', 'dev.db'),
   bookingStockByUnitType,
+  bookingPriceByUnitType,
   bmsUser: getEnv('BMS_USER', 'crossvillage'),
   bmsPassword: getEnv('BMS_PASSWORD', 'admin123'),
   resendApiKey: getOptionalEnv('RESEND_API_KEY'),
